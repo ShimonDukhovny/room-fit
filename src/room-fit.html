@@ -243,7 +243,12 @@
       <summary class="side-sum"><h3>Projects</h3><span class="hint" id="sideCurrent"></span></summary>
       <div class="side-body">
         <div class="side-where" id="sideWhere"></div>
-        <div class="side-actions"><button type="button" id="btnNewProject">New project</button></div>
+        <div class="side-actions">
+          <button type="button" id="btnNewProject">New project</button>
+          <button type="button" id="btnOpenFolder">Open a folder of projects</button>
+          <input type="file" id="folderInput" webkitdirectory multiple hidden>
+        </div>
+        <p class="hint" id="openFolderHint">Each sub-folder becomes a project, and the .json room files inside it become its rooms.</p>
         <form class="inline-form" id="newProjectForm" hidden novalidate>
           <label>Project name<input id="newProjectName" type="text" autocomplete="off" placeholder="Smith house"></label>
           <div class="row"><button type="submit" class="primary">Create project</button><button type="button" id="btnNewProjectCancel">Cancel</button></div>
@@ -389,7 +394,7 @@
 
   <section id="measure">
     <h2>What to measure</h2>
-    <p class="section-intro">A rough sketch with the numbers written on it is enough. A photo of a page from a notebook works fine. Inches or centimetres, whichever her tape reads.</p>
+    <p class="section-intro">A rough sketch with the numbers written on it is enough. A photo of a page from a notebook works fine. Inches or centimetres, whichever the tape measure shows.</p>
     <div class="measure">
       <div class="sketch">
         <svg viewBox="0 0 380 270" role="img" aria-label="Sketch of a room showing walls A to D, diagonals E and F, a door offset G and a window offset H">
@@ -436,28 +441,28 @@
           <li><p><b>Each door.</b> <span class="tag">G</span> Distance from the nearest corner to the edge of the opening, the opening's width, which side the hinges are on, and whether it swings into the room.</p></li>
           <li><p><b>Each window.</b> <span class="tag">H</span> Distance from the corner, width, height of the sill above the floor, and the window's height.</p></li>
           <li><p><b>Things that can't move.</b> Radiators, vents, columns, built-ins, beams, and the outlets and switches that furniture shouldn't cover. For each one, where it is and how big it is.</p></li>
-          <li><p><b>The furniture she's considering.</b> Width × depth × height. The numbers from a product page are fine.</p></li>
+          <li><p><b>The furniture being considered.</b> Width × depth × height. The numbers from a product page are fine.</p></li>
         </ol>
-        <p class="note">Steps 1, 4 and 7 are enough for a first try. The rest makes the plan accurate enough to hand to a subcontractor.</p>
+        <p class="note">Steps 1, 4 and 7 are enough for a first try. The rest makes the plan accurate enough for construction work.</p>
       </div>
     </div>
   </section>
 
   <section id="tools">
-    <h2>Where the real projects would live</h2>
-    <p class="section-intro">This page is a quick way to try the idea without installing anything. For real projects she needs a program that saves files, shows the room in 3D and grows with her. Here is the one that fits that first job best, and how the others compare.</p>
+    <h2>Going further in 3D</h2>
+    <p class="section-intro">This page answers “does it fit?” without installing anything. For colours, materials and a walk-through in 3D, a dedicated program helps. Here is the one that fits that job best, and how the others compare.</p>
 
     <div class="pick">
       <div class="pick-head">
         <h3>Sweet Home 3D</h3>
         <span class="badge">Free, no account, no time limit</span>
       </div>
-      <p>It is built for exactly this job: draw the room from measurements, drop furniture in from a catalog, and move it around. A 3D view of the room updates next to the plan while she works. It runs on Windows, Mac and Linux, works offline, and saves projects as <code>.sh3d</code> files she owns.</p>
+      <p>It is built for exactly this job: draw the room from measurements, drop furniture in from a catalog, and move it around. A 3D view of the room updates next to the plan. It runs on Windows, Mac and Linux, works offline, and saves projects as <code>.sh3d</code> files on your computer.</p>
       <div class="two">
         <div>
-          <b>What she would actually do</b>
+          <b>How a room comes together</b>
           <ul>
-            <li>Click from corner to corner to draw the walls, typing each wall's length as she goes.</li>
+            <li>Click from corner to corner to draw the walls, typing each wall's length along the way.</li>
             <li>Drag doors, windows, sofas, beds and cabinets in from the catalog.</li>
             <li>Double-click any piece to type its exact size or change its colour.</li>
             <li>Paint walls and pick floor textures, then walk through the room in 3D.</li>
@@ -466,9 +471,9 @@
         <div>
           <b>Good to know</b>
           <ul>
-            <li>Free under an open-source licence, for personal or paid client work.</li>
+            <li>Free under an open-source licence, for personal or commercial work.</li>
             <li>Download it from sweethome3d.com. The app-store versions are paid copies of the same program, so there's no need to buy one.</li>
-            <li>She can print the plan to PDF to send to subcontractors, and export the 3D model to other programs later.</li>
+            <li>Plans print to PDF for trades and contractors, and the 3D model exports to other programs.</li>
             <li>It's for rooms and furniture. Custom arches or built-ins are where SketchUp is stronger.</li>
           </ul>
         </div>
@@ -480,22 +485,22 @@
         <thead><tr><th>Option</th><th>Cost</th><th>Good for</th><th>The catch</th></tr></thead>
         <tbody>
           <tr><td>Sweet Home 3D</td><td>Free</td><td>Room layouts, furniture fit, quick 3D views. Learn it in an afternoon.</td><td>Plainer-looking, and it doesn't model custom shapes well.</td></tr>
-          <tr><td>SketchUp Free</td><td>Free for personal use. Go is $129/yr, Pro is $399/yr.</td><td>Building anything: arches, millwork, stucco details, landscaping. The industry standard among designers.</td><td>A general 3D tool with more to learn before it feels easy. It runs in the browser only and stores files in Trimble's cloud. Paid client work needs a paid plan.</td></tr>
+          <tr><td>SketchUp Free</td><td>Free for personal use. Go is $129/yr, Pro is $399/yr.</td><td>Building anything: arches, millwork, stucco details, landscaping. An industry standard for interior design.</td><td>A general 3D tool with more to learn before it feels easy. It runs in the browser only and stores files in Trimble's cloud. Commercial work needs a paid plan.</td></tr>
           <tr><td>Floorplanner</td><td>Free basic plan</td><td>Quick floor plans in a browser.</td><td>The free plan limits the number of projects and watermarks low-resolution exports.</td></tr>
           <tr><td>Planner 5D</td><td>Free tier</td><td>A friendly app on phones and tablets.</td><td>The free tier opens only a small share of the furniture catalog, and resizing pieces is restricted.</td></tr>
         </tbody>
       </table>
     </div>
 
-    <p class="note"><b>Suggested path:</b> use this page for quick "does it fit?" checks. It takes no learning. When she wants to show a client, see colours in 3D, or keep a project file, move to Sweet Home 3D, and have someone else draw the walls the first time so she starts at the fun part. When she wants to model the construction side, such as arches, niches and built-ins, try SketchUp Free on one personal project. If it clicks, a SketchUp Go licence covers client work.</p>
+    <p class="note"><b>Suggested path:</b> use this page for quick “does it fit?” checks. It takes no learning. For colours, materials and 3D views, move to Sweet Home 3D. To model the construction side, such as arches, niches and built-ins, try SketchUp Free on one personal project; a SketchUp Go licence covers commercial work.</p>
   </section>
 
   <section id="next">
-    <h2>How it would work</h2>
+    <h2>How it works</h2>
     <div class="flow">
-      <div><span>She measures</span><b>Sketch plus numbers</b><p class="hint">Using the list above. A phone photo is fine.</p></div>
-      <div><span>The room gets set up</span><b>Walls, door, windows</b><p class="hint">She enters them in Sweet Home 3D herself, or you send them over and the room is built for her.</p></div>
-      <div><span>She plays</span><b>Drag, swap, compare</b><p class="hint">She tries different furniture and spacing, and saves each version as its own option to show a client.</p></div>
+      <div><span>Measure</span><b>Sketch plus numbers</b><p class="hint">Using the list above. A phone photo of the sketch is fine.</p></div>
+      <div><span>Set up the room</span><b>Walls, doors, windows</b><p class="hint">Start a new room and answer a few questions. The plan draws itself as you go.</p></div>
+      <div><span>Try layouts</span><b>Drag, swap, compare</b><p class="hint">Try different furniture and spacing, and keep each version as its own option with “Duplicate as another option”.</p></div>
     </div>
   </section>
 
@@ -1670,7 +1675,7 @@
       window.claude.use("downloads").then(function (d) { dl = d; $("btnExport").hidden = !d && !linkSave; }, function () {});
     }
   } catch (e) {}
-  // Outside Claude (the file on her Mac, or the website) an ordinary download link saves the file.
+  // Outside Claude (a local copy of the page, or the website) an ordinary download link saves the file.
   var linkSave = false;
   try { linkSave = window.top === window && !window.claude; } catch (e) {}
   if (linkSave) $("btnExport").hidden = false;
@@ -1691,12 +1696,12 @@
       a.download = base + ".roomfit.json";
       document.body.appendChild(a); a.click();
       setTimeout(function () { URL.revokeObjectURL(a.href); a.remove(); }, 2000);
-      keepMsg("Saved to the Downloads folder. Move it somewhere safe, such as iCloud Drive, or email it to yourself.");
+      keepMsg("Saved to the Downloads folder. Move it somewhere safe, or email it to yourself.");
       return;
     }
     if (!dl) return;
     dl.save({ filename: base + ".roomfit.json", data: exportText() }).then(function () {
-      keepMsg("Saved to the Downloads folder. Move it somewhere safe, such as iCloud Drive, or email it to yourself.");
+      keepMsg("Saved to the Downloads folder. Move it somewhere safe, or email it to yourself.");
     }, function (err) {
       var c = err && err.code;
       if (c === "declined") return;
@@ -1758,7 +1763,7 @@
   // Two homes for rooms, with one set of operations:
   //  - "folder": a folder on this computer that the viewer picks. Each project is a sub-folder
   //    and each room is a .json file in the format "Save room to a file" writes, so rooms are
-  //    ordinary files she owns. Room files at the top of the folder show as "Not in a project".
+  //    ordinary files on that computer. Room files at the top of the folder show as "Not in a project".
   //  - "browser": projects kept in this browser's storage, for places that can't open folders
   //    (inside the Claude artifact, Safari, Firefox).
   // The room on the plan is also cached under KEY on every change, so a reload or a lost folder
@@ -1997,7 +2002,7 @@
     await afterConnect();
   }
   // With access to the folder again: write edits made while it was disconnected, otherwise reload
-  // the room from its file in case it changed elsewhere (another computer, via iCloud).
+  // the room from its file in case it changed elsewhere (for example on another computer).
   async function afterConnect() {
     var exists = cur && ws.tree.some(function (pr) { return pr.id === cur.p && pr.rooms.some(function (rm) { return rm.id === cur.r; }); });
     if (cur && !exists) cur = null;
@@ -2040,7 +2045,7 @@
       }
     } else {
       h.push("<span>Projects are kept in this browser. Use “Save room to a file” to keep a copy anywhere else.</span>");
-      if (ws.folderCapable) h.push('<div class="row"><button type="button" class="primary" data-ws="pick">Use a folder on this computer</button></div><span>Recommended: each room becomes a file you own. Make a new folder for it, for example in Documents or iCloud Drive.</span>');
+      if (ws.folderCapable) h.push('<div class="row"><button type="button" class="primary" data-ws="pick">Use a folder on this computer</button></div><span>Recommended: each room becomes a file on this computer. Make a new folder for it, for example in Documents.</span>');
     }
     where.innerHTML = h.join("");
 
@@ -2083,7 +2088,7 @@
     $("eyebrow").textContent = (cur && cur.p !== LOOSE ? curProj + " · " : "") + "Room Fit";
     $("sideCurrent").textContent = cur ? curProj : "";
     $("keepHint").textContent = ws.mode === "folder" && ws.perm === "granted"
-      ? "This room is already a file in your folder. Save another copy to send it to someone or keep a backup."
+      ? "This room is already a file in your folder. Save another copy to share it or keep a backup."
       : "This room is kept only in this browser. Save a copy to keep it safe or to open it somewhere else.";
     $("sidebar").classList.toggle("locked", !!wiz);
   }
@@ -2131,6 +2136,65 @@
     createProject(name).then(function () { $("newProjectForm").hidden = true; renderSidebar(); setStatus("Created " + name + ". Add a room with New room."); },
       function (err) { setStatus("Couldn't create the project (" + (err && err.message || err) + ").", true); });
   });
+
+  // ----- opening a folder of projects -----
+  // Each sub-folder of the chosen folder becomes a project, and the room files (.json) inside it,
+  // at any depth, become its rooms. Room files at the top level go into a project named after the
+  // folder itself. Rooms are copied into the workspace; a room that is already there is skipped,
+  // so opening the same folder twice adds nothing new.
+  $("btnOpenFolder").addEventListener("click", function () {
+    if (wiz) return;
+    if (ws.mode === "folder" && ws.perm !== "granted") { setStatus("Reconnect the folder first.", true); return; }
+    $("folderInput").value = "";
+    $("folderInput").click();
+  });
+  $("folderInput").addEventListener("change", function () { importFolder(Array.prototype.slice.call(this.files || [])); });
+  async function importFolder(files) {
+    if (!files.length) return;
+    var top = (files[0].webkitRelativePath || "").split("/")[0] || "Opened folder";
+    var groups = {}, order = [], skipped = 0;
+    for (var i = 0; i < files.length; i++) {
+      var f = files[i], parts = (f.webkitRelativePath || f.name).split("/");
+      if (!/\.json$/i.test(f.name) || parts.some(function (x) { return x.charAt(0) === "."; })) continue;
+      var room = null;
+      try { room = normalize(JSON.parse(await f.text())); } catch (e) {}
+      if (!room) { skipped++; continue; }
+      if (!room.name) room.name = f.name.replace(/(\.roomfit)?\.json$/i, "");
+      var proj = cleanName(parts.length > 2 ? parts[1] : top) || "Opened folder";
+      if (!groups[proj]) { groups[proj] = []; order.push(proj); }
+      groups[proj].push(room);
+    }
+    if (!order.length) { setStatus("No room files were found in " + top + ". Rooms are .json files saved from this page.", true); return; }
+    await flushWrite();
+    var added = 0, already = 0, first = null;
+    try {
+      for (var k = 0; k < order.length; k++) {
+        var name = order[k];
+        var pr = ws.tree.filter(function (x) { return x.id !== LOOSE && x.name.toLowerCase() === name.toLowerCase(); })[0];
+        var pid = pr ? pr.id : await createProject(name), seen = [];
+        if (pr) for (var e = 0; e < pr.rooms.length; e++) { var have = await readRoom(pid, pr.rooms[e].id); if (have) seen.push(JSON.stringify(have)); }
+        for (var j = 0; j < groups[name].length; j++) {
+          var key = JSON.stringify(groups[name][j]);
+          if (seen.indexOf(key) >= 0) { already++; continue; }
+          var rid = await createRoom(pid, groups[name][j]);
+          seen.push(key); added++;
+          if (!first) first = { p: pid, r: rid };
+        }
+      }
+    } catch (err) {
+      renderSidebar();
+      setStatus("Opening the folder stopped (" + (err && err.message || err) + "). Rooms added so far are kept.", true);
+      return;
+    }
+    if (first) await openRoom(first.p, first.r);
+    renderSidebar();
+    var msg = added
+      ? "Opened " + top + ": added " + added + (added === 1 ? " room" : " rooms") + " in " + order.length + (order.length === 1 ? " project" : " projects") + (already ? ", and " + already + " were already here" : "") + "."
+      : "Nothing new in " + top + ": all " + already + (already === 1 ? " room is" : " rooms are") + " already here.";
+    if (skipped) msg += " " + skipped + (skipped === 1 ? " file was skipped because it isn't a room." : " files were skipped because they aren't rooms.");
+    if (ws.mode === "browser" && added) msg += " The original folder isn't changed.";
+    setStatus(msg);
+  }
 
   async function initWorkspace() {
     ws.folderCapable = canUseFolders();

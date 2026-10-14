@@ -293,6 +293,7 @@
       <div class="card launch" id="launch">
         <button type="button" class="primary" id="btnWizard">Start a new room</button>
         <p class="hint">A few questions set up the walls, doors and windows. Furniture comes after.</p>
+        <p class="msg" id="launchMsg" hidden></p>
       </div>
       <div class="card wizard" id="wizard" hidden></div>
 
@@ -2051,7 +2052,7 @@
       }
     } else {
       h.push("<span>Projects are kept in this browser. Use “Save room to a file” to keep a copy anywhere else.</span>");
-      if (ws.folderCapable) h.push('<div class="row"><button type="button" class="primary" data-ws="pick">Use a folder on this computer</button></div><span>Recommended: each room becomes a file you own, for example in iCloud Drive.</span>');
+      if (ws.folderCapable) h.push('<div class="row"><button type="button" class="primary" data-ws="pick">Use a folder on this computer</button></div><span>Recommended: each room becomes a file you own. Make a new folder for it, for example in Documents or iCloud Drive.</span>');
     }
     where.innerHTML = h.join("");
 
@@ -2576,6 +2577,7 @@
     dropWizDraft();
     var target = wiz.target;
     wiz = null; wizHi = null; sel = null; cur = null;
+    writeCur(false); // the cached room is now the new one, which has no file yet
     showWizard(false); showTab("add"); renderPanel(); save(); renderPlan(); renderSidebar();
     addRoomAndOpen(target, clone(S)).then(function () {
       $("catSelect").scrollIntoView({ block: "nearest", behavior: "smooth" });
@@ -2583,6 +2585,13 @@
   }
   function startWizard(target) {
     if (wiz) return;
+    if (ws.mode === "folder" && ws.perm !== "granted") {
+      // a new room needs somewhere to go; and the open room's unsaved edits must stay attached to it
+      var m = $("launchMsg"); m.textContent = "Reconnect the folder in the Projects list first, so the new room can be saved there."; m.hidden = false;
+      setStatus("Reconnect the folder to start a new room.", true);
+      return;
+    }
+    $("launchMsg").hidden = true;
     selOpening = null;
     flushWrite();
     wiz = { step: "intro", ctx: {}, backup: clone(S), backupSel: sel, backupCur: cur, target: target != null ? target : targetProject(), history: [], focus: true };

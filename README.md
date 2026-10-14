@@ -16,7 +16,8 @@ The sidebar holds **projects** (a client or a house), each with **rooms**.
 
 - **A folder on this computer** (Chrome and Edge): choose "Use a folder on this computer".
   Each project is a sub-folder and each room is a `.roomfit.json` file, saved automatically.
-  A folder inside iCloud Drive is backed up and syncs to other Macs. After the browser
+  A folder inside iCloud Drive would also be backed up and sync to other Macs. If Chrome refuses
+  a folder (it blocks some system folders), make a new folder in Documents instead. After the browser
   restarts it may ask for permission again: "Reconnect the folder". Changes made before
   reconnecting are kept in the browser and written to the file on reconnect.
 - **In the browser** (Safari, Firefox, and inside the Claude artifact): projects live in that

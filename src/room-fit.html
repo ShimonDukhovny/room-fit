@@ -1,0 +1,2596 @@
+<title>Room Fit</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@62..125,400..800&display=swap">
+<style>
+  :root {
+    --paper: #EEF2EF;
+    --sheet: #FBFCFA;
+    --ink: #1E2422;
+    --ink2: #56605C;
+    --rule: #CDD5D0;
+    --grid: #E2E8E4;
+    --wall: #2A312F;
+    --accent: #16656E;
+    --accent-soft: #D3E8E9;
+    --furn: #DFE8E3;
+    --furn-line: #66756F;
+    --rug: #EFE8DA;
+    --rug-line: #B4A586;
+    --glass: #7FA9B0;
+    --swing: #E7EEF0;
+    --fixed: #C4CDC8;
+    --sill: #E4DCCB;
+    --warn: #85570A;
+    --ok: #2B7046;
+    --ok-soft: #DAEEE0;
+    --bad: #B2361E;
+    --bad-soft: #F7DCD4;
+    --radius: 6px;
+    color-scheme: light;
+  }
+  * { box-sizing: border-box; }
+  [hidden] { display: none !important; }
+  body {
+    background: var(--paper);
+    color: var(--ink);
+    font-family: "Archivo", "Helvetica Neue", Arial, system-ui, sans-serif;
+    font-size: 15px;
+    line-height: 1.5;
+  }
+  .wrap { max-width: 1480px; margin: 0 auto; padding-inline: 20px; padding-block: 28px 64px; }
+  header { display: grid; gap: 6px; margin-bottom: 22px; }
+  .eyebrow { font-size: 12px; letter-spacing: .12em; text-transform: uppercase; color: var(--ink2); font-weight: 600; }
+  h1 { font-size: clamp(34px, 6vw, 52px); line-height: 1; margin: 0; font-weight: 800; font-stretch: 118%; letter-spacing: -.01em; text-wrap: balance; }
+  .lede { max-width: 64ch; margin: 6px 0 0; color: var(--ink2); font-size: 16px; }
+  h2 { font-size: 24px; font-weight: 750; font-stretch: 112%; margin: 0 0 6px; text-wrap: balance; }
+  h3 { font-size: 13px; letter-spacing: .1em; text-transform: uppercase; font-weight: 700; margin: 0; color: var(--ink2); }
+  p { margin: 0; }
+  a { color: var(--accent); }
+  section { margin-top: 56px; }
+  .section-intro { max-width: 66ch; color: var(--ink2); margin-bottom: 18px; }
+
+  /* planner */
+  .app { display: grid; grid-template-columns: 250px minmax(0, 1fr); gap: 22px; align-items: start; }
+  @media (max-width: 1100px) { .app { grid-template-columns: minmax(0, 1fr); } }
+  .sidebar { background: var(--sheet); border: 1px solid var(--rule); border-radius: var(--radius); padding: 12px; display: grid; gap: 10px; align-content: start; }
+  @media (min-width: 1101px) { .sidebar { position: sticky; top: calc(env(safe-area-inset-top, 0px) + 12px); max-height: calc(100vh - 24px); overflow: auto; } }
+  .sidebar.locked .tree, .sidebar.locked .side-actions { opacity: .45; pointer-events: none; }
+  .side-sum { cursor: pointer; list-style: none; display: flex; justify-content: space-between; align-items: center; gap: 8px; }
+  .side-sum::-webkit-details-marker { display: none; }
+  .side-sum h3::before { content: "▸ "; }
+  details[open] > .side-sum h3::before { content: "▾ "; }
+  .side-body { display: grid; gap: 10px; margin-top: 10px; }
+  .side-where { font-size: 12.5px; color: var(--ink2); display: grid; gap: 6px; padding: 8px; background: var(--paper); border-radius: 4px; }
+  .side-where b { color: var(--ink); font-weight: 650; word-break: break-word; }
+  .side-where .row button, .side-actions button, .proj-row button.small { font-size: 12px; padding: 3px 8px; }
+  .side-actions { display: flex; flex-wrap: wrap; gap: 6px; }
+  .tree { display: grid; gap: 6px; }
+  .proj-row { display: flex; align-items: center; justify-content: space-between; gap: 6px; }
+  .proj-name { border: 0; background: none; padding: 4px 2px; font-weight: 700; font-size: 14px; text-align: left; color: var(--ink); flex: 1; min-width: 0; overflow-wrap: anywhere; }
+  .proj-name:hover:not(:disabled) { color: var(--accent); }
+  .rooms { list-style: none; margin: 0 0 0 10px; padding: 0 0 0 8px; border-left: 1px solid var(--rule); display: grid; gap: 1px; }
+  .room-link { display: grid; width: 100%; text-align: left; border: 0; background: none; padding: 5px 8px; border-radius: 4px; font-weight: 500; font-size: 13.5px; color: var(--ink); }
+  .room-link small { color: var(--ink2); font-size: 11.5px; font-weight: 400; }
+  .room-link:hover:not(:disabled) { background: var(--paper); color: var(--ink); }
+  .room-link.active { background: var(--accent-soft); color: var(--accent); font-weight: 650; }
+  .room-tools { display: flex; flex-wrap: wrap; gap: 4px; margin: 2px 0 4px 8px; }
+  .room-tools button { font-size: 11.5px; padding: 2px 7px; }
+  .empty-proj { font-size: 12px; color: var(--ink2); padding: 3px 8px; }
+  .side-status { font-size: 12px; color: var(--ink2); margin: 0; overflow-wrap: anywhere; }
+  .side-status.warn { color: var(--warn); }
+  .inline-form { display: grid; gap: 6px; padding: 8px; background: var(--paper); border-radius: 4px; }
+  .confirm { display: grid; gap: 6px; padding: 8px; background: var(--bad-soft); border-radius: 4px; font-size: 12.5px; }
+  .planner { display: grid; grid-template-columns: minmax(0, 1fr) 340px; gap: 18px; align-items: start; }
+  @media (max-width: 880px) { .planner { grid-template-columns: minmax(0, 1fr); } }
+  .board { background: var(--sheet); border: 1px solid var(--rule); border-radius: var(--radius); padding: 10px; display: grid; gap: 8px; }
+  #plan { width: 100%; max-width: 100%; height: auto; max-height: 74vh; display: block; touch-action: none; user-select: none; -webkit-user-select: none; outline: none; border-radius: 4px; }
+  /* on wide screens the plan stays in view while the controls scroll beside it */
+  @media (min-width: 881px) {
+    .board { position: sticky; top: calc(env(safe-area-inset-top, 0px) + 12px); }
+    #plan { max-height: calc(100vh - 96px); }
+  }
+  .tabs { display: flex; border-bottom: 1px solid var(--rule); gap: 2px; margin: -4px -4px 0; }
+  .tabs button { border: 0; border-radius: 4px 4px 0 0; background: none; padding: 8px 12px; font-size: 14px; color: var(--ink2); border-bottom: 2px solid transparent; margin-bottom: -1px; }
+  .tabs button[aria-selected="true"] { color: var(--accent); border-bottom-color: var(--accent); }
+  .tabpanel { display: grid; gap: 10px; }
+  .custom { display: grid; gap: 8px; border-top: 1px solid var(--rule); padding-top: 10px; }
+  .check { display: flex; align-items: center; gap: 8px; font-size: 13px; color: var(--ink); font-weight: 500; }
+  .check input { width: auto; }
+  #plan:focus-visible { box-shadow: 0 0 0 2px var(--accent); }
+  .piece { cursor: grab; }
+  .dragging .piece { cursor: grabbing; }
+  .legend { display: flex; flex-wrap: wrap; gap: 6px 16px; font-size: 12.5px; color: var(--ink2); padding: 2px 4px; }
+  .legend span { display: inline-flex; align-items: center; gap: 6px; }
+  .sw { width: 14px; height: 10px; border: 1px solid var(--furn-line); background: var(--furn); display: inline-block; border-radius: 2px; }
+  .sw.sill { background: var(--sill); border-color: var(--wall); height: 6px; }
+  .sw.fixed { background: var(--fixed); border-color: var(--wall); }
+  .piece.fixed { cursor: pointer; }
+  .sw.rug { background: var(--rug); border: 1px dashed var(--rug-line); }
+  .sw.bad { background: var(--bad-soft); border-color: var(--bad); }
+  .sw.swing { background: var(--swing); border: 1px dashed var(--furn-line); border-radius: 0 10px 0 0; }
+  .sw.dim { border: 0; border-top: 2px solid var(--accent); height: 0; background: none; }
+  .sw.clear { background: repeating-linear-gradient(135deg, var(--accent-soft) 0 3px, transparent 3px 6px); border: 1px dashed var(--accent); }
+
+  .panel { display: grid; gap: 12px; }
+  .card { background: var(--sheet); border: 1px solid var(--rule); border-radius: var(--radius); padding: 14px; display: grid; gap: 10px; }
+  .status { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+  .pill { font-size: 13px; font-weight: 700; padding: 3px 10px; border-radius: 999px; }
+  .pill.ok { background: var(--ok-soft); color: var(--ok); }
+  .pill.bad { background: var(--bad-soft); color: var(--bad); }
+  .conflicts { margin: 0; padding-left: 18px; color: var(--bad); font-size: 13.5px; display: grid; gap: 2px; }
+  .stats { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+  .stat { display: grid; gap: 0; }
+  .stat b { font-size: 22px; font-weight: 750; font-stretch: 110%; font-variant-numeric: tabular-nums; line-height: 1.15; }
+  .stat small { font-size: 12px; color: var(--ink2); }
+  .fields { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+  .fields .full { grid-column: 1 / -1; }
+  label { display: grid; gap: 3px; font-size: 12px; color: var(--ink2); font-weight: 600; }
+  input, select {
+    font: inherit; font-size: 15px; color: var(--ink); background: #fff;
+    border: 1px solid var(--rule); border-radius: 4px; padding: 6px 8px; width: 100%; min-width: 0;
+    font-variant-numeric: tabular-nums;
+  }
+  input:focus-visible, select:focus-visible, button:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
+  input[aria-invalid="true"] { border-color: var(--bad); background: var(--bad-soft); }
+  input:disabled { background: var(--paper); color: var(--ink2); }
+  .row { display: flex; flex-wrap: wrap; gap: 6px; }
+  button {
+    font: inherit; font-size: 13.5px; font-weight: 600; color: var(--ink); background: #fff;
+    border: 1px solid var(--rule); border-radius: 4px; padding: 6px 10px; cursor: pointer;
+  }
+  button:hover:not(:disabled) { border-color: var(--accent); color: var(--accent); }
+  button:disabled { opacity: .45; cursor: default; }
+  button.primary { background: var(--accent); color: #fff; border-color: var(--accent); }
+  button.primary:hover:not(:disabled) { color: #fff; filter: brightness(1.08); }
+  .seg { display: inline-flex; border: 1px solid var(--rule); border-radius: 4px; overflow: hidden; }
+  .seg button { border: 0; border-radius: 0; }
+  .seg button[aria-pressed="true"] { background: var(--accent); color: #fff; }
+  .unit-seg button { padding: 3px 10px; font-size: 12.5px; }
+  .card-head { display: flex; justify-content: space-between; align-items: center; gap: 8px; }
+  .wiz-len { display: flex; gap: 8px; align-items: stretch; }
+  .wiz-len .wiz-input { flex: 1; }
+  .chips { display: flex; flex-wrap: wrap; gap: 6px; }
+  .chips button { font-weight: 500; font-size: 13px; padding: 4px 9px; }
+  .chips button small { color: var(--ink2); font-size: 11.5px; margin-left: 4px; }
+  .chips button:hover small { color: inherit; }
+  .hint { font-size: 12.5px; color: var(--ink2); }
+  .msg { font-size: 12.5px; color: var(--bad); min-height: 0; }
+  details { border-top: 1px solid var(--rule); padding-top: 8px; }
+  summary { cursor: pointer; font-weight: 600; font-size: 13.5px; }
+  .openings { display: grid; gap: 10px; margin-top: 10px; }
+  .opening { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; padding: 8px; background: var(--paper); border-radius: 4px; }
+  .opening .head { grid-column: 1 / -1; display: flex; justify-content: space-between; align-items: center; font-size: 13px; font-weight: 700; }
+  .opening .head button { padding: 2px 8px; font-size: 12px; }
+  .opening.active { box-shadow: 0 0 0 2px var(--accent); background: var(--accent-soft); }
+  .opening .head.sub { font-size: 12px; letter-spacing: .06em; text-transform: uppercase; color: var(--ink2); margin-top: 4px; }
+  .opening .add-sill { grid-column: 1 / -1; justify-self: start; font-size: 12.5px; padding: 4px 9px; }
+  .notes { color: var(--warn); }
+  .opening-hit { cursor: pointer; }
+  .wall-hit { cursor: pointer; }
+
+  /* keeping a copy */
+  .paste { font: 12.5px/1.4 ui-monospace, "SF Mono", Menlo, Consolas, monospace; width: 100%; resize: vertical; border: 1px solid var(--rule); border-radius: 4px; padding: 6px 8px; background: #fff; color: var(--ink); }
+  .import { display: grid; gap: 8px; border-top: 1px solid var(--rule); padding-top: 10px; }
+
+  /* new-room wizard */
+  .launch { gap: 6px; }
+  .launch .primary { justify-self: start; font-size: 15px; padding: 8px 14px; }
+  .wizard { gap: 14px; border-color: var(--accent); box-shadow: 0 0 0 1px var(--accent); }
+  .wiz-top { display: flex; justify-content: space-between; align-items: baseline; gap: 8px; font-size: 12px; letter-spacing: .1em; text-transform: uppercase; font-weight: 700; color: var(--accent); }
+  .wiz-top span:last-child { color: var(--ink2); letter-spacing: .04em; text-transform: none; font-weight: 500; }
+  .wiz-progress { display: grid; grid-template-columns: repeat(4, 1fr); gap: 4px; margin-top: -6px; }
+  .wiz-progress i { height: 4px; border-radius: 2px; background: var(--rule); }
+  .wiz-progress i.on { background: var(--accent); }
+  .wizard form { display: grid; gap: 12px; }
+  .wiz-q { font-size: 21px; line-height: 1.25; font-weight: 750; font-stretch: 104%; margin: 0; text-wrap: balance; }
+  .wiz-lead { color: var(--ink2); font-size: 14.5px; }
+  .wiz-input { font-size: 18px; padding: 9px 10px; }
+  .choices { display: grid; gap: 6px; }
+  .choice { display: flex; align-items: center; gap: 10px; padding: 10px 12px; border: 1px solid var(--rule); border-radius: 6px; background: #fff; cursor: pointer; font-size: 15px; font-weight: 500; color: var(--ink); }
+  .choice input { width: auto; margin: 0; accent-color: var(--accent); }
+  .choice:has(input:checked) { border-color: var(--accent); background: var(--accent-soft); }
+  .wiz-more summary { cursor: pointer; color: var(--accent); font-weight: 600; font-size: 13.5px; }
+  .wiz-more { border: 0; padding: 0; }
+  .wiz-more > div { display: grid; gap: 8px; padding-top: 8px; font-size: 14px; color: var(--ink2); }
+  .wiz-ex { background: var(--paper); border-radius: 4px; padding: 8px 10px; color: var(--ink); }
+  .wiz-nav { display: flex; justify-content: space-between; gap: 8px; }
+  .wiz-nav .primary { font-size: 15px; padding: 8px 18px; margin-left: auto; }
+  .linkish { background: none; border: 0; padding: 0; color: var(--ink2); text-decoration: underline; font-weight: 500; font-size: 13px; justify-self: start; }
+  .linkish:hover:not(:disabled) { color: var(--bad); }
+  .wiz-summary { margin: 0; padding-left: 18px; display: grid; gap: 2px; }
+  .orient svg { width: 100%; max-width: 280px; height: auto; display: block; }
+
+  /* measuring */
+  .measure { display: grid; grid-template-columns: minmax(0, 380px) minmax(0, 1fr); gap: 28px; align-items: start; }
+  @media (max-width: 760px) { .measure { grid-template-columns: minmax(0, 1fr); } }
+  .sketch { background: var(--sheet); border: 1px solid var(--rule); border-radius: var(--radius); padding: 10px; }
+  .sketch svg { width: 100%; height: auto; display: block; }
+  .steps { margin: 0; padding: 0; list-style: none; counter-reset: s; display: grid; gap: 12px; max-width: 64ch; }
+  .steps li { counter-increment: s; display: grid; grid-template-columns: 28px 1fr; gap: 10px; }
+  .steps li::before { content: counter(s); font-weight: 750; font-stretch: 110%; color: var(--accent); font-size: 18px; line-height: 1.3; font-variant-numeric: tabular-nums; }
+  .steps b { font-weight: 700; }
+  .tag { display: inline-block; font-size: 11.5px; font-weight: 700; color: var(--accent); background: var(--accent-soft); border-radius: 3px; padding: 0 5px; margin-right: 2px; }
+  .note { margin-top: 16px; padding: 12px 14px; background: var(--sheet); border-left: 3px solid var(--accent); border-radius: 0 4px 4px 0; max-width: 64ch; }
+
+  /* tools */
+  .pick { background: var(--sheet); border: 1px solid var(--rule); border-radius: var(--radius); padding: 20px; display: grid; gap: 12px; }
+  .pick-head { display: flex; flex-wrap: wrap; align-items: baseline; gap: 6px 14px; }
+  .pick-head h3 { color: var(--ink); font-size: 26px; letter-spacing: 0; text-transform: none; font-weight: 800; font-stretch: 112%; }
+  .badge { font-size: 12px; font-weight: 700; color: var(--ok); background: var(--ok-soft); padding: 2px 8px; border-radius: 999px; }
+  .two { display: grid; grid-template-columns: 1fr 1fr; gap: 18px; }
+  @media (max-width: 760px) { .two { grid-template-columns: 1fr; } }
+  .two ul { margin: 6px 0 0; padding-left: 18px; display: grid; gap: 4px; }
+  .table-wrap { overflow-x: auto; margin-top: 16px; background: var(--sheet); border: 1px solid var(--rule); border-radius: var(--radius); }
+  table { border-collapse: collapse; width: 100%; min-width: 640px; font-size: 14px; }
+  th, td { text-align: left; vertical-align: top; padding: 10px 12px; border-bottom: 1px solid var(--rule); }
+  th { font-size: 12px; letter-spacing: .08em; text-transform: uppercase; color: var(--ink2); font-weight: 700; }
+  tr:last-child td { border-bottom: 0; }
+  td:first-child { font-weight: 700; white-space: nowrap; }
+  .flow { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; margin-top: 4px; }
+  @media (max-width: 760px) { .flow { grid-template-columns: 1fr; } }
+  .flow div { background: var(--sheet); border: 1px solid var(--rule); border-radius: var(--radius); padding: 14px; display: grid; gap: 4px; align-content: start; }
+  .flow b { font-size: 15px; }
+  .flow span { font-size: 12px; font-weight: 700; color: var(--accent); letter-spacing: .08em; text-transform: uppercase; }
+  .sources { font-size: 12.5px; color: var(--ink2); margin-top: 40px; display: grid; gap: 2px; }
+  @media (prefers-reduced-motion: reduce) { * { transition: none !important; } }
+</style>
+
+<div class="wrap">
+ <div class="app">
+  <aside class="sidebar" id="sidebar" aria-label="Projects">
+    <details id="sideDetails" open>
+      <summary class="side-sum"><h3>Projects</h3><span class="hint" id="sideCurrent"></span></summary>
+      <div class="side-body">
+        <div class="side-where" id="sideWhere"></div>
+        <div class="side-actions"><button type="button" id="btnNewProject">New project</button></div>
+        <form class="inline-form" id="newProjectForm" hidden novalidate>
+          <label>Project name<input id="newProjectName" type="text" autocomplete="off" placeholder="Smith house"></label>
+          <div class="row"><button type="submit" class="primary">Create project</button><button type="button" id="btnNewProjectCancel">Cancel</button></div>
+        </form>
+        <div class="tree" id="tree"></div>
+        <p class="side-status" id="sideStatus" aria-live="polite"></p>
+      </div>
+    </details>
+  </aside>
+  <div class="main">
+  <header>
+    <div class="eyebrow" id="eyebrow">Room Fit · furniture layout</div>
+    <h1 id="roomTitle">Sample living room</h1>
+    <p class="lede">Drag the furniture around this <span id="ledeRoom">16′ × 13′ room</span>. The teal lines show how much space is left between the selected piece and the nearest wall or piece. Anything that overlaps or blocks the door turns red. To set up a real room, choose <b>Start a new room</b> and answer a few questions.</p>
+  </header>
+
+  <div class="planner">
+    <div class="board">
+      <svg id="plan" tabindex="0" aria-label="Room plan. Drag furniture to move it. Arrow keys nudge the selected piece, R rotates it."></svg>
+      <div class="legend">
+        <span><i class="sw"></i>Furniture</span>
+        <span><i class="sw rug"></i>Rug (sits under things)</span>
+        <span><i class="sw fixed"></i>Fixed in place</span>
+        <span><i class="sw sill"></i>Window sill or door trim (tap a window or door to add one)</span>
+        <span><i class="sw swing"></i>Door swing, keep clear</span>
+        <span><i class="sw clear"></i>Space a piece needs, such as a chair rolling back</span>
+        <span><i class="sw bad"></i>Conflict</span>
+        <span><i class="sw dim"></i>Space left around the selected piece</span>
+        <span><i class="sw clear"></i>Hover over or tap a wall to see the free lengths along it</span>
+        <span><i class="sw dim"></i>Dragging snaps to centres; hold Option (Alt) to drag freely</span>
+      </div>
+    </div>
+
+    <div class="panel" id="panel">
+      <div class="card launch" id="launch">
+        <button type="button" class="primary" id="btnWizard">Start a new room</button>
+        <p class="hint">A few questions set up the walls, doors and windows. Furniture comes after.</p>
+      </div>
+      <div class="card wizard" id="wizard" hidden></div>
+
+      <div class="card" id="keep">
+        <h3>Keep a copy of this room</h3>
+        <div class="row">
+          <button type="button" id="btnExport" hidden>Save room to a file</button>
+          <button type="button" id="btnCopy">Copy as text</button>
+          <button type="button" id="btnImport">Open a saved room</button>
+        </div>
+        <p class="hint" id="keepHint">Save a copy to keep it safe or to open it somewhere else.</p>
+        <p class="msg" id="keepMsg" hidden></p>
+        <textarea id="copyBox" class="paste" readonly hidden rows="4" aria-label="The room as text"></textarea>
+        <div id="importBox" class="import" hidden>
+          <div class="row">
+            <button type="button" id="btnChooseFile">Choose a room file</button>
+            <input type="file" id="importFile" accept=".json,.txt,application/json,text/plain" hidden>
+          </div>
+          <label>Or paste the copied text<textarea id="importText" class="paste" rows="4" placeholder="Paste here"></textarea></label>
+          <p class="hint" id="importSummary"></p>
+          <div class="row">
+            <button type="button" class="primary" id="btnImportGo" disabled>Add and open this room</button>
+            <button type="button" id="btnImportCancel">Cancel</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="status" id="status"></div>
+        <ul class="conflicts" id="conflicts" hidden></ul>
+        <ul class="conflicts notes" id="notes" hidden></ul>
+        <div class="stats">
+          <div class="stat"><b id="openPct">–</b><small>of the floor left open</small></div>
+          <div class="stat"><b id="floorArea">–</b><small>room floor area</small></div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-head"><h3>Selected piece</h3><span class="seg unit-seg" role="group" aria-label="Units"><button type="button" data-unit="ft" aria-pressed="true" title="Feet and inches">in</button><button type="button" data-unit="cm" aria-pressed="false" title="Centimetres">cm</button></span></div>
+        <div class="fields">
+          <label class="full">Name<input id="selName" type="text" autocomplete="off"></label>
+          <label>Width<input id="selW" type="text" inputmode="decimal" autocomplete="off"></label>
+          <label>Depth<input id="selD" type="text" inputmode="decimal" autocomplete="off"></label>
+          <label>Height<input id="selH" type="text" inputmode="decimal" autocomplete="off" placeholder="optional"></label>
+          <label>Keep clear on one side<input id="selClear" type="text" inputmode="decimal" autocomplete="off" placeholder="none"></label>
+          <label class="check full"><input id="selFixed" type="checkbox"> Fixed in place, like a radiator or built-in</label>
+        </div>
+        <p class="msg" id="selMsg" hidden></p>
+        <div class="row">
+          <button id="btnRotate" type="button">Rotate 90°</button>
+          <button id="btnDup" type="button">Duplicate</button>
+          <button id="btnDel" type="button">Remove</button>
+        </div>
+        <p class="hint">Drag to move. Pieces snap flush when you bring them close to a wall. Rotate to turn the clear space to the side it belongs on. With the plan focused, arrow keys nudge 1″ (Shift for 6″) and R rotates.</p>
+      </div>
+
+      <div class="card">
+        <div class="tabs" role="tablist">
+          <button type="button" role="tab" id="tabAdd" aria-selected="true" aria-controls="paneAdd">Add furniture</button>
+          <button type="button" role="tab" id="tabRoom" aria-selected="false" aria-controls="paneRoom">Room, door, windows</button>
+        </div>
+
+        <div class="tabpanel" id="paneAdd" role="tabpanel" aria-labelledby="tabAdd">
+          <div class="card-head"><h3>From the list</h3><span class="seg unit-seg" role="group" aria-label="Units"><button type="button" data-unit="ft" aria-pressed="true" title="Feet and inches">in</button><button type="button" data-unit="cm" aria-pressed="false" title="Centimetres">cm</button></span></div>
+          <label>Choose a piece<select id="catSelect"></select></label>
+          <div class="row"><button type="button" class="primary" id="btnAddCat">Add to the room</button></div>
+          <p class="hint" id="catHint"></p>
+          <form class="custom" id="customForm" novalidate>
+            <div class="card-head"><h3>Your own piece</h3><span class="seg unit-seg" role="group" aria-label="Units"><button type="button" data-unit="ft" aria-pressed="true" title="Feet and inches">in</button><button type="button" data-unit="cm" aria-pressed="false" title="Centimetres">cm</button></span></div>
+            <div class="fields">
+              <label class="full">Name<input id="cName" type="text" autocomplete="off" placeholder="Velvet chaise"></label>
+              <label>Width<input id="cW" type="text" inputmode="decimal" autocomplete="off" placeholder="66&quot;"></label>
+              <label>Depth<input id="cD" type="text" inputmode="decimal" autocomplete="off" placeholder="30&quot;"></label>
+              <label class="full">Height <span style="font-weight:400">(optional, used to check window sills)</span><input id="cH" type="text" inputmode="decimal" autocomplete="off" placeholder="32&quot;"></label>
+              <label class="full">Space to keep clear on one side <span style="font-weight:400">(optional)</span><input id="cClear" type="text" inputmode="decimal" autocomplete="off" placeholder="e.g. 30&quot; for dresser drawers"></label>
+            </div>
+            <label class="check"><input id="cRug" type="checkbox"> It's a rug, so other pieces can sit on it</label>
+            <p class="msg" id="cMsg" hidden></p>
+            <div class="row"><button type="submit" class="primary">Add to the room</button></div>
+          </form>
+        </div>
+
+        <div class="tabpanel" id="paneRoom" role="tabpanel" aria-labelledby="tabRoom" hidden>
+        <div class="status" style="justify-content: space-between">
+          <h3>Room size</h3>
+          <span class="seg unit-seg" role="group" aria-label="Units"><button type="button" data-unit="ft" aria-pressed="true" title="Feet and inches">in</button><button type="button" data-unit="cm" aria-pressed="false" title="Centimetres">cm</button></span>
+        </div>
+        <div class="fields">
+          <label class="full">Room name<input id="roomName" type="text" autocomplete="off" placeholder="Main bedroom"></label>
+          <label>Width (left to right)<input id="roomW" type="text" inputmode="decimal" autocomplete="off"></label>
+          <label>Length (top to bottom)<input id="roomL" type="text" inputmode="decimal" autocomplete="off"></label>
+        </div>
+        <p class="hint" id="unitHint"></p>
+        <p class="msg" id="msg" hidden></p>
+        <div class="card-head" style="margin-top: 6px"><h3>Doors and windows</h3><span class="seg unit-seg" role="group" aria-label="Units"><button type="button" data-unit="ft" aria-pressed="true" title="Feet and inches">in</button><button type="button" data-unit="cm" aria-pressed="false" title="Centimetres">cm</button></span></div>
+        <div class="openings" id="openings"></div>
+        <div class="row"><button type="button" id="btnAddDoor">Add a door</button><button type="button" id="btnAddWin">Add a window</button></div>
+        <div class="row" style="border-top: 1px solid var(--rule); padding-top: 10px"><button type="button" id="btnReset">Add the sample room to this project</button></div>
+        </div>
+      </div>
+    </div>
+  </div>
+  </div>
+ </div>
+
+  <section id="measure">
+    <h2>What to measure</h2>
+    <p class="section-intro">A rough sketch with the numbers written on it is enough. A photo of a page from a notebook works fine. Inches or centimetres, whichever her tape reads.</p>
+    <div class="measure">
+      <div class="sketch">
+        <svg viewBox="0 0 380 270" role="img" aria-label="Sketch of a room showing walls A to D, diagonals E and F, a door offset G and a window offset H">
+          <rect x="50" y="40" width="270" height="180" fill="none" stroke="var(--wall)" stroke-width="5"/>
+          <!-- window on top wall -->
+          <rect x="170" y="36" width="80" height="8" fill="var(--sheet)"/>
+          <line x1="170" y1="40" x2="250" y2="40" stroke="var(--glass)" stroke-width="2"/>
+          <line x1="170" y1="34" x2="170" y2="46" stroke="var(--wall)" stroke-width="1.5"/>
+          <line x1="250" y1="34" x2="250" y2="46" stroke="var(--wall)" stroke-width="1.5"/>
+          <!-- door on bottom wall -->
+          <rect x="90" y="216" width="50" height="8" fill="var(--sheet)"/>
+          <line x1="90" y1="220" x2="90" y2="170" stroke="var(--ink)" stroke-width="1.5"/>
+          <path d="M90 170 A50 50 0 0 1 140 220" fill="none" stroke="var(--furn-line)" stroke-dasharray="3 3"/>
+          <!-- diagonals -->
+          <line x1="50" y1="40" x2="320" y2="220" stroke="var(--accent)" stroke-dasharray="5 4" opacity=".55"/>
+          <line x1="320" y1="40" x2="50" y2="220" stroke="var(--accent)" stroke-dasharray="5 4" opacity=".55"/>
+          <!-- offsets -->
+          <line x1="50" y1="240" x2="90" y2="240" stroke="var(--accent)"/>
+          <line x1="50" y1="234" x2="50" y2="246" stroke="var(--accent)"/><line x1="90" y1="234" x2="90" y2="246" stroke="var(--accent)"/>
+          <line x1="50" y1="22" x2="170" y2="22" stroke="var(--accent)"/>
+          <line x1="50" y1="16" x2="50" y2="28" stroke="var(--accent)"/><line x1="170" y1="16" x2="170" y2="28" stroke="var(--accent)"/>
+          <g font-family="Archivo, Arial, sans-serif" font-weight="700" font-size="15" fill="var(--accent)" text-anchor="middle">
+            <text x="110" y="62">A</text>
+            <text x="304" y="134">B</text>
+            <text x="230" y="208">C</text>
+            <text x="66" y="134">D</text>
+            <text x="150" y="98">E</text>
+            <text x="222" y="98">F</text>
+            <text x="70" y="262">G</text>
+            <text x="110" y="15">H</text>
+          </g>
+          <g font-family="Archivo, Arial, sans-serif" font-size="11" fill="var(--ink2)" text-anchor="middle">
+            <text x="210" y="62">window</text>
+            <text x="115" y="206">door</text>
+            <text x="350" y="134" text-anchor="start" transform="rotate(90 350 134)">clockwise →</text>
+          </g>
+        </svg>
+      </div>
+      <div>
+        <ol class="steps">
+          <li><p><b>Every wall, going clockwise from one corner.</b> <span class="tag">A</span><span class="tag">B</span><span class="tag">C</span><span class="tag">D</span> Measure wall to wall along the floor. An L-shaped room just has more walls.</p></li>
+          <li><p><b>Both diagonals, corner to corner.</b> <span class="tag">E</span><span class="tag">F</span> If they match, the room is square. If they don't, the room is a little skewed, and the diagonals let it be drawn true.</p></li>
+          <li><p><b>Ceiling height.</b> Needed for the 3D view, tall bookcases and arches.</p></li>
+          <li><p><b>Each door.</b> <span class="tag">G</span> Distance from the nearest corner to the edge of the opening, the opening's width, which side the hinges are on, and whether it swings into the room.</p></li>
+          <li><p><b>Each window.</b> <span class="tag">H</span> Distance from the corner, width, height of the sill above the floor, and the window's height.</p></li>
+          <li><p><b>Things that can't move.</b> Radiators, vents, columns, built-ins, beams, and the outlets and switches that furniture shouldn't cover. For each one, where it is and how big it is.</p></li>
+          <li><p><b>The furniture she's considering.</b> Width × depth × height. The numbers from a product page are fine.</p></li>
+        </ol>
+        <p class="note">Steps 1, 4 and 7 are enough for a first try. The rest makes the plan accurate enough to hand to a subcontractor.</p>
+      </div>
+    </div>
+  </section>
+
+  <section id="tools">
+    <h2>Where the real projects would live</h2>
+    <p class="section-intro">This page is a quick way to try the idea without installing anything. For real projects she needs a program that saves files, shows the room in 3D and grows with her. Here is the one that fits that first job best, and how the others compare.</p>
+
+    <div class="pick">
+      <div class="pick-head">
+        <h3>Sweet Home 3D</h3>
+        <span class="badge">Free, no account, no time limit</span>
+      </div>
+      <p>It is built for exactly this job: draw the room from measurements, drop furniture in from a catalog, and move it around. A 3D view of the room updates next to the plan while she works. It runs on Windows, Mac and Linux, works offline, and saves projects as <code>.sh3d</code> files she owns.</p>
+      <div class="two">
+        <div>
+          <b>What she would actually do</b>
+          <ul>
+            <li>Click from corner to corner to draw the walls, typing each wall's length as she goes.</li>
+            <li>Drag doors, windows, sofas, beds and cabinets in from the catalog.</li>
+            <li>Double-click any piece to type its exact size or change its colour.</li>
+            <li>Paint walls and pick floor textures, then walk through the room in 3D.</li>
+          </ul>
+        </div>
+        <div>
+          <b>Good to know</b>
+          <ul>
+            <li>Free under an open-source licence, for personal or paid client work.</li>
+            <li>Download it from sweethome3d.com. The app-store versions are paid copies of the same program, so there's no need to buy one.</li>
+            <li>She can print the plan to PDF to send to subcontractors, and export the 3D model to other programs later.</li>
+            <li>It's for rooms and furniture. Custom arches or built-ins are where SketchUp is stronger.</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>Option</th><th>Cost</th><th>Good for</th><th>The catch</th></tr></thead>
+        <tbody>
+          <tr><td>Sweet Home 3D</td><td>Free</td><td>Room layouts, furniture fit, quick 3D views. Learn it in an afternoon.</td><td>Plainer-looking, and it doesn't model custom shapes well.</td></tr>
+          <tr><td>SketchUp Free</td><td>Free for personal use. Go is $129/yr, Pro is $399/yr.</td><td>Building anything: arches, millwork, stucco details, landscaping. The industry standard among designers.</td><td>A general 3D tool with more to learn before it feels easy. It runs in the browser only and stores files in Trimble's cloud. Paid client work needs a paid plan.</td></tr>
+          <tr><td>Floorplanner</td><td>Free basic plan</td><td>Quick floor plans in a browser.</td><td>The free plan limits the number of projects and watermarks low-resolution exports.</td></tr>
+          <tr><td>Planner 5D</td><td>Free tier</td><td>A friendly app on phones and tablets.</td><td>The free tier opens only a small share of the furniture catalog, and resizing pieces is restricted.</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <p class="note"><b>Suggested path:</b> use this page for quick "does it fit?" checks. It takes no learning. When she wants to show a client, see colours in 3D, or keep a project file, move to Sweet Home 3D, and have someone else draw the walls the first time so she starts at the fun part. When she wants to model the construction side, such as arches, niches and built-ins, try SketchUp Free on one personal project. If it clicks, a SketchUp Go licence covers client work.</p>
+  </section>
+
+  <section id="next">
+    <h2>How it would work</h2>
+    <div class="flow">
+      <div><span>She measures</span><b>Sketch plus numbers</b><p class="hint">Using the list above. A phone photo is fine.</p></div>
+      <div><span>The room gets set up</span><b>Walls, door, windows</b><p class="hint">She enters them in Sweet Home 3D herself, or you send them over and the room is built for her.</p></div>
+      <div><span>She plays</span><b>Drag, swap, compare</b><p class="hint">She tries different furniture and spacing, and saves each version as its own option to show a client.</p></div>
+    </div>
+  </section>
+
+  <div class="sources">
+    <span>Sources, checked October 2026:</span>
+    <a href="https://www.sweethome3d.com/" target="_blank" rel="noopener">sweethome3d.com</a>
+    <a href="https://softpicker.com/how-to-create-floor-plan-online-free/" target="_blank" rel="noopener">Floorplanner free plan, softpicker.com</a>
+    <a href="https://machow2.com/planner-5d-review" target="_blank" rel="noopener">Planner 5D review, machow2.com</a>
+    <a href="https://www.snaptrude.com/alternatives/free-sketchup" target="_blank" rel="noopener">SketchUp Free limits, snaptrude.com</a>
+  </div>
+</div>
+
+<script>
+(function () {
+  "use strict";
+  var KEY = "roomfit.v2";
+  var T = 6;            // drawn wall thickness, inches
+  var SNAP_WALL = 3;    // snap flush to a wall within this many inches
+  var WALKWAY = 36;     // comfortable walkway, inches
+
+  // Typical sizes in inches: w = width, d = depth, h = height. Beds use the frame, and the
+  // headboard for height, because that is what meets a window sill. clear = space kept open
+  // on one side, for drawers, doors or a chair rolling back.
+  var CATALOG_GROUPS = [
+    ["Living room", [
+      { name: "Sofa, 3 seats", w: 84, d: 38, h: 34 },
+      { name: "Sofa, 4 seats", w: 96, d: 38, h: 34 },
+      { name: "Loveseat", w: 64, d: 36, h: 34 },
+      { name: "Chaise lounge", w: 66, d: 30, h: 32 },
+      { name: "Armchair", w: 32, d: 34, h: 34 },
+      { name: "Accent chair", w: 28, d: 30, h: 32 },
+      { name: "Recliner", w: 36, d: 38, h: 40 },
+      { name: "Ottoman", w: 30, d: 20, h: 17 },
+      { name: "Coffee table", w: 48, d: 24, h: 18 },
+      { name: "Round coffee table", w: 36, d: 36, h: 18 },
+      { name: "Side table", w: 20, d: 20, h: 24 },
+      { name: "Console table", w: 48, d: 14, h: 30 },
+      { name: "Media console", w: 70, d: 18, h: 24 },
+      { name: "Bookcase", w: 36, d: 14, h: 72 },
+      { name: "Tall cabinet", w: 36, d: 18, h: 72, clear: 18 },
+      { name: "Upright piano", w: 58, d: 24, h: 48 },
+      { name: "Baby grand piano", w: 58, d: 66, h: 40 },
+      { name: "Floor lamp", w: 15, d: 15, h: 65 },
+      { name: "Large plant", w: 20, d: 20, h: 60 }
+    ]],
+    ["Dining", [
+      { name: "Dining table, 4 seats", w: 48, d: 36, h: 30, table: true },
+      { name: "Dining table, 6 seats", w: 72, d: 38, h: 30, table: true },
+      { name: "Dining table, 8 seats", w: 96, d: 40, h: 30, table: true },
+      { name: "Round dining table", w: 48, d: 48, h: 30, table: true },
+      { name: "Dining chair", w: 18, d: 21, h: 36, kind: "chair" },
+      { name: "Dining bench", w: 48, d: 15, h: 18, kind: "chair" },
+      { name: "Bar stool", w: 16, d: 16, h: 30, kind: "chair" },
+      { name: "Sideboard", w: 60, d: 18, h: 34, clear: 18 },
+      { name: "China cabinet", w: 48, d: 18, h: 80, clear: 18 }
+    ]],
+    ["Bedroom", [
+      { name: "Twin bed", w: 42, d: 80, h: 48 },
+      { name: "Twin XL bed", w: 42, d: 84, h: 48 },
+      { name: "Full bed", w: 57, d: 80, h: 48 },
+      { name: "Queen bed", w: 64, d: 86, h: 50 },
+      { name: "King bed", w: 80, d: 86, h: 50 },
+      { name: "California king bed", w: 76, d: 90, h: 50 },
+      { name: "Bunk bed", w: 42, d: 80, h: 65 },
+      { name: "Crib", w: 30, d: 54, h: 36 },
+      { name: "Nightstand", w: 24, d: 18, h: 26 },
+      { name: "Dresser", w: 60, d: 20, h: 32, clear: 30 },
+      { name: "Tall chest of drawers", w: 36, d: 20, h: 50, clear: 30 },
+      { name: "Wardrobe", w: 40, d: 24, h: 72, clear: 30 },
+      { name: "Vanity table", w: 42, d: 18, h: 30, table: true },
+      { name: "Bench, end of bed", w: 48, d: 16, h: 18 }
+    ]],
+    ["Office", [
+      { name: "Desk", w: 48, d: 24, h: 30, table: true },
+      { name: "Large desk", w: 60, d: 30, h: 30, table: true },
+      { name: "Rolling desk chair", w: 26, d: 26, h: 40, kind: "chair", clear: 18 },
+      { name: "Filing cabinet", w: 15, d: 25, h: 28, clear: 24 },
+      { name: "Bookcase, narrow", w: 24, d: 12, h: 72 },
+      { name: "Printer stand", w: 24, d: 18, h: 30 }
+    ]],
+    ["Kitchen", [
+      { name: "Kitchen island", w: 72, d: 36, h: 36, table: true },
+      { name: "Kitchen table", w: 42, d: 42, h: 30, table: true },
+      { name: "Bar cart", w: 30, d: 16, h: 34 }
+    ]],
+    ["Kids and play", [
+      { name: "Toy chest", w: 36, d: 18, h: 20 },
+      { name: "Play table", w: 30, d: 24, h: 20, table: true },
+      { name: "Kids chair", w: 14, d: 14, h: 22, kind: "chair" }
+    ]],
+    ["Rugs", [
+      { name: "Rug 5×8", w: 60, d: 96, kind: "rug" },
+      { name: "Rug 6×9", w: 72, d: 108, kind: "rug" },
+      { name: "Rug 8×10", w: 96, d: 120, kind: "rug" },
+      { name: "Rug 9×12", w: 108, d: 144, kind: "rug" },
+      { name: "Runner 2½×8", w: 30, d: 96, kind: "rug" }
+    ]]
+  ];
+  var CATALOG = [];
+  CATALOG_GROUPS.forEach(function (g) { g[1].forEach(function (c) { CATALOG.push(c); }); });
+
+  var SAMPLE = {
+    name: "Sample living room",
+    unit: "ft",
+    room: { w: 192, l: 156 },
+    doors: [{ wall: "S", offset: 18, width: 32, hinge: "start", swing: "in" }],
+    windows: [{ wall: "N", offset: 60, width: 72 }, { wall: "E", offset: 40, width: 48 }],
+    items: [
+      { id: 1, name: "Rug 8×10", w: 96, d: 120, rot: 90, x: 36, y: 30, kind: "rug" },
+      { id: 2, name: "Sofa", w: 84, d: 38, rot: 90, x: 0, y: 36 },
+      { id: 3, name: "Coffee table", w: 48, d: 24, rot: 90, x: 56, y: 54 },
+      { id: 4, name: "Armchair", w: 32, d: 34, rot: 0, x: 100, y: 8 },
+      { id: 5, name: "Armchair 2", w: 32, d: 34, rot: 0, x: 100, y: 110 },
+      { id: 6, name: "Media console", w: 70, d: 18, rot: 90, x: 174, y: 43 },
+      { id: 7, name: "Bookcase", w: 36, d: 14, rot: 0, x: 142, y: 0 },
+      { id: 8, name: "Desk", w: 48, d: 24, rot: 0, x: 136, y: 132, table: true },
+      { id: 9, name: "Rolling desk chair", w: 26, d: 26, rot: 180, x: 147, y: 112, kind: "chair", clear: 18 }
+    ]
+  };
+
+  function clone(o) { return JSON.parse(JSON.stringify(o)); }
+  function load() {
+    try {
+      var raw = localStorage.getItem(KEY);
+      if (raw) {
+        var s = JSON.parse(raw);
+        s = normalize(s);
+        if (s) return s;
+      }
+    } catch (e) {}
+    return clone(SAMPLE);
+  }
+  // Accepts a saved layout, either as stored in the browser or as exported from "Keep a copy",
+  // and brings older layouts up to date. Returns null for anything that isn't a room.
+  function normalize(s) {
+    if (s && s.app === "Room Fit" && s.room && s.room.room) s = s.room;
+    if (!s || !s.room || !(s.room.w > 0) || !(s.room.l > 0) || !Array.isArray(s.items) || !Array.isArray(s.windows)) return null;
+    // layouts saved before several doors were supported had a single "door"
+    if (!Array.isArray(s.doors)) { s.doors = s.door ? [s.door] : []; delete s.door; }
+    s.doors.forEach(function (d) { if (!d.swing) d.swing = "in"; });
+    if (s.unit !== "cm") s.unit = "ft";
+    return s;
+  }
+  function save() { if (wiz) return; try { localStorage.setItem(KEY, JSON.stringify(S)); } catch (e) {} }
+
+  var S = load();
+  var sel = S.items.length ? (S.items.find(function (i) { return i.name === "Sofa"; }) || S.items[0]).id : null;
+  var drag = null;
+  var hoverWall = null, pinnedWall = null; // the wall whose free lengths are showing
+  var wiz = null;     // the new-room wizard while it is open; nothing is saved until it finishes
+  var wizHi = null;   // the door or window the current question is about
+  var selOpening = null; // a door or window tapped on the plan, open for editing
+
+  var $ = function (id) { return document.getElementById(id); };
+  var svg = $("plan");
+
+  // ---------- units ----------
+  function grain() { return S.unit === "cm" ? 1 / 2.54 : 1; }
+  // feet and inches to the nearest half inch
+  function ftIn(v) { var n = Math.round(v * 2) / 2, ft = Math.floor(n / 12); return { ft: ft, inch: n - ft * 12 }; }
+  function fmt(v) {
+    if (S.unit === "cm") return Math.round(v * 2.54) + " cm";
+    var p = ftIn(v), inch = Math.floor(p.inch) + (p.inch % 1 ? "½" : "");
+    if (p.ft === 0) return inch + "″";
+    return p.inch ? p.ft + "′ " + inch + "″" : p.ft + "′";
+  }
+  function fmtInput(v) {
+    if (S.unit === "cm") return Math.round(v * 2.54) + " cm";
+    var p = ftIn(v);
+    if (p.ft === 0) return p.inch + '"';
+    return p.inch ? p.ft + "' " + p.inch + '"' : p.ft + "'";
+  }
+  // plain: how to read a bare number — "ft", "in" or "cm"
+  function parseLen(s, plain) {
+    s = String(s).trim().toLowerCase().replace(/[′’‘]/g, "'").replace(/[″“”]/g, '"').replace(/,/g, ".");
+    var m;
+    if ((m = s.match(/^(\d*\.?\d+)\s*(mm|cm|m)$/))) return +m[1] * { mm: 0.1, cm: 1, m: 100 }[m[2]] / 2.54;
+    if ((m = s.match(/^(\d*\.?\d+)$/))) return +m[1] * { ft: 12, "in": 1, cm: 1 / 2.54 }[plain];
+    if ((m = s.match(/^(\d*\.?\d+)\s+(\d*\.?\d+)$/))) return +m[1] * 12 + +m[2];
+    m = s.match(/^(?:(\d*\.?\d+)\s*(?:'|ft|feet|foot)\s*)?(?:(\d*\.?\d+)\s*(?:"|in|inch|inches)?)?$/);
+    if (m && (m[1] || m[2])) return (m[1] ? +m[1] * 12 : 0) + (m[2] ? +m[2] : 0);
+    return NaN;
+  }
+  function plainFor(kind) { return S.unit === "cm" ? "cm" : kind; }
+  function area(sqIn) {
+    if (S.unit === "cm") return (sqIn * 6.4516 / 10000).toFixed(1) + " m²";
+    return Math.round(sqIn / 144) + " sq ft";
+  }
+
+  // ---------- geometry ----------
+  function fp(it) {
+    var turned = it.rot % 180 !== 0;
+    return { x: it.x, y: it.y, w: turned ? it.d : it.w, h: turned ? it.w : it.d };
+  }
+  function intersect(a, b) {
+    var x0 = Math.max(a.x, b.x), x1 = Math.min(a.x + a.w, b.x + b.w);
+    var y0 = Math.max(a.y, b.y), y1 = Math.min(a.y + a.h, b.y + b.h);
+    if (x1 - x0 > 0.01 && y1 - y0 > 0.01) return { x: x0, y: y0, w: x1 - x0, h: y1 - y0 };
+    return null;
+  }
+  function wallLen(wall) { return wall === "N" || wall === "S" ? S.room.w : S.room.l; }
+  // u runs along the wall (N/S from the left end, E/W from the top end); v runs into the room
+  function wallPt(wall, u, v) {
+    var W = S.room.w, L = S.room.l;
+    if (wall === "N") return [u, v];
+    if (wall === "S") return [u, L - v];
+    if (wall === "W") return [v, u];
+    return [W - v, u];
+  }
+  function wallRect(wall, u0, u1, v0, v1) {
+    var a = wallPt(wall, u0, v0), b = wallPt(wall, u1, v1);
+    return { x: Math.min(a[0], b[0]), y: Math.min(a[1], b[1]), w: Math.abs(a[0] - b[0]), h: Math.abs(a[1] - b[1]) };
+  }
+  function doorGeom(d) {
+    var hu = d.hinge === "start" ? d.offset : d.offset + d.width;
+    var s = d.hinge === "start" ? 1 : -1;
+    return { d: d, hu: hu, s: s, hinge: wallPt(d.wall, hu, 0), square: wallRect(d.wall, d.offset, d.offset + d.width, 0, d.width) };
+  }
+  // The strip a piece needs kept open on one side, such as a desk chair rolling back.
+  // At rotation 0 it sits below the piece; each 90° turn moves it one side clockwise.
+  function clearZone(it) {
+    if (!it.clear) return null;
+    var r = fp(it), c = it.clear, q = ((it.rot || 0) / 90) % 4;
+    if (q === 0) return { x: r.x, y: r.y + r.h, w: r.w, h: c };
+    if (q === 1) return { x: r.x - c, y: r.y, w: c, h: r.h };
+    if (q === 2) return { x: r.x, y: r.y - c, w: r.w, h: c };
+    return { x: r.x + r.w, y: r.y, w: c, h: r.h };
+  }
+  function sillRect(wn) {
+    if (!wn.sill) return null;
+    var len = Math.min(wn.sill.len, wallLen(wn.wall));
+    var u0 = Math.max(0, Math.min(wn.offset + wn.width / 2 - len / 2, wallLen(wn.wall) - len));
+    return wallRect(wn.wall, u0, u0 + len, 0, wn.sill.depth);
+  }
+  // Door trim (casing) runs along the wall on each side of the opening and stands a little
+  // proud of it. It takes wall length, but the door itself still swings only within the opening.
+  function trimRects(d) {
+    if (!d.trim) return [];
+    var t = d.trim, out = [], len = wallLen(d.wall);
+    var u0 = Math.max(0, d.offset - (t.a || 0)), u1 = Math.min(len, d.offset + d.width + (t.b || 0));
+    if (d.offset - u0 > 0.01) out.push(wallRect(d.wall, u0, d.offset, 0, t.depth));
+    if (u1 - (d.offset + d.width) > 0.01) out.push(wallRect(d.wall, d.offset + d.width, u1, 0, t.depth));
+    return out;
+  }
+  function doorSpan(d) {
+    var len = wallLen(d.wall), t = d.trim || {};
+    return [Math.max(0, d.offset - (t.a || 0)), Math.min(len, d.offset + d.width + (t.b || 0))];
+  }
+  // A rectangle seen from a wall: u runs along the wall (the same axis as x for the top and
+  // bottom walls, y for the side walls) and v is the distance out from the wall face.
+  function toWall(wall, r) {
+    var W = S.room.w, L = S.room.l;
+    if (wall === "N") return { u0: r.x, u1: r.x + r.w, v0: r.y, v1: r.y + r.h };
+    if (wall === "S") return { u0: r.x, u1: r.x + r.w, v0: L - r.y - r.h, v1: L - r.y };
+    if (wall === "W") return { u0: r.y, u1: r.y + r.h, v0: r.x, v1: r.x + r.w };
+    return { u0: r.y, u1: r.y + r.h, v0: W - r.x - r.w, v1: W - r.x };
+  }
+  var AGAINST = 6; // a piece this close to a wall uses up that stretch of it
+  // What takes up wall length (pieces against the wall, doors with their trim, door swings that
+  // reach it) and what marks it without blocking furniture (windows).
+  function wallFeatures(wall, skip) {
+    var len = wallLen(wall), blocks = [], marks = [];
+    function block(q, label) { var a = Math.max(0, q.u0), b = Math.min(len, q.u1); if (b - a > 0.01) blocks.push({ u0: a, u1: b, label: label }); }
+    S.items.forEach(function (it) {
+      if (it === skip || it.kind === "rug") return;
+      var q = toWall(wall, fp(it)); if (q.v0 <= AGAINST) block(q, it.name);
+    });
+    S.doors.forEach(function (d, i) {
+      var name = S.doors.length > 1 ? "door " + (i + 1) : "the door";
+      if (d.wall === wall) { var sp = doorSpan(d); block({ u0: sp[0], u1: sp[1] }, name); }
+      else if (d.swing === "in") { var q = toWall(wall, doorGeom(d).square); if (q.v0 <= AGAINST) block(q, name + "'s swing"); }
+    });
+    S.windows.forEach(function (wn, i) {
+      if (wn.wall === wall) marks.push({ u0: wn.offset, u1: wn.offset + wn.width, label: S.windows.length > 1 ? "window " + (i + 1) : "the window", sill: wn.sill || null });
+    });
+    blocks.sort(function (a, b) { return a.u0 - b.u0; });
+    return { len: len, blocks: blocks, marks: marks };
+  }
+  // The free stretches of a wall, each with how deep a piece there can be before it meets
+  // something in front of it.
+  function wallStretches(wall, skip) {
+    var f = wallFeatures(wall, skip), out = [], pos = 0, from = "the corner";
+    f.blocks.forEach(function (k) {
+      if (k.u0 - pos > 0.5) out.push({ u0: pos, u1: k.u0, from: from, to: k.label });
+      if (k.u1 > pos) { pos = k.u1; from = k.label; }
+    });
+    if (f.len - pos > 0.5) out.push({ u0: pos, u1: f.len, from: from, to: "the corner" });
+    var across = wall === "N" || wall === "S" ? S.room.l : S.room.w;
+    var fronts = S.items.filter(function (it) { return it !== skip && it.kind !== "rug"; }).map(fp)
+      .concat(S.doors.filter(function (d) { return d.swing === "in" && d.wall !== wall; }).map(function (d) { return doorGeom(d).square; }));
+    var qs = fronts.map(function (r) { return toWall(wall, r); }).filter(function (q) { return q.v0 > AGAINST; });
+    out.forEach(function (seg) {
+      // depth varies along the stretch: split it wherever something in front starts or ends
+      var cuts = [seg.u0, seg.u1];
+      qs.forEach(function (q) { [q.u0, q.u1].forEach(function (u) { if (u > seg.u0 + 0.01 && u < seg.u1 - 0.01) cuts.push(u); }); });
+      cuts.sort(function (a, b) { return a - b; });
+      seg.profile = [];
+      for (var i = 0; i + 1 < cuts.length; i++) {
+        var a = cuts[i], b = cuts[i + 1], d = across;
+        if (b - a < 0.01) continue;
+        qs.forEach(function (q) { if (q.u1 > a + 0.01 && q.u0 < b - 0.01) d = Math.min(d, q.v0); });
+        seg.profile.push({ u0: a, u1: b, depth: d });
+      }
+      seg.depth = seg.profile.reduce(function (m, x) { return Math.min(m, x.depth); }, across);
+      seg.maxDepth = seg.profile.reduce(function (m, x) { return Math.max(m, x.depth); }, 0);
+      seg.sill = f.marks.filter(function (m) { return m.sill && m.u1 > seg.u0 && m.u0 < seg.u1; })[0] || null;
+    });
+    return out;
+  }
+  // chairs tuck under desks and tables, so that overlap is expected
+  function tucks(a, b) { return (a.kind === "chair" && b.table) || (b.kind === "chair" && a.table); }
+  function hitsSwing(r) {
+    return S.doors.some(function (d) {
+      if (d.swing !== "in") return false;
+      var g = doorGeom(d), box = intersect(r, g.square);
+      if (!box) return false;
+      var cx = Math.min(Math.max(g.hinge[0], box.x), box.x + box.w);
+      var cy = Math.min(Math.max(g.hinge[1], box.y), box.y + box.h);
+      return Math.hypot(cx - g.hinge[0], cy - g.hinge[1]) < d.width - 0.01;
+    });
+  }
+
+  function analyse() {
+    var list = [], bad = {};
+    var W = S.room.w, L = S.room.l;
+    S.items.forEach(function (it) {
+      var r = fp(it);
+      if (r.x < -0.01 || r.y < -0.01 || r.x + r.w > W + 0.01 || r.y + r.h > L + 0.01) {
+        list.push(it.name + " goes past a wall"); bad[it.id] = 1;
+      }
+    });
+    var solid = S.items.filter(function (i) { return i.kind !== "rug"; });
+    for (var i = 0; i < solid.length; i++) for (var j = i + 1; j < solid.length; j++) {
+      if (!tucks(solid[i], solid[j]) && intersect(fp(solid[i]), fp(solid[j]))) {
+        list.push(solid[i].name + " overlaps " + solid[j].name);
+        bad[solid[i].id] = bad[solid[j].id] = 1;
+      }
+    }
+    solid.forEach(function (it) {
+      if (hitsSwing(fp(it))) { list.push(it.name + " is in " + (S.doors.length > 1 ? "a" : "the") + " door's swing"); bad[it.id] = 1; }
+    });
+    var badZone = {};
+    solid.forEach(function (it) {
+      var z = clearZone(it); if (!z) return;
+      var need = it.name + " needs " + fmt(it.clear) + " clear";
+      if (z.x < -0.01 || z.y < -0.01 || z.x + z.w > W + 0.01 || z.y + z.h > L + 0.01) {
+        list.push(need + ", and a wall is in the way"); bad[it.id] = badZone[it.id] = 1;
+      }
+      solid.forEach(function (o) {
+        if (o !== it && intersect(z, fp(o))) {
+          list.push(need + ", and " + o.name + " is in the way"); bad[it.id] = badZone[it.id] = 1;
+        }
+      });
+    });
+    var used = 0;
+    solid.forEach(function (it) {
+      var c = intersect(fp(it), { x: 0, y: 0, w: W, h: L });
+      if (c) used += c.w * c.h;
+    });
+    var notes = [];
+    S.windows.forEach(function (wn, wi) {
+      var sr = sillRect(wn); if (!sr) return;
+      var which = S.windows.length > 1 ? "window " + (wi + 1) + "'s sill" : "the window sill";
+      var sh = wn.sill.height;
+      solid.forEach(function (it) {
+        if (it.fixed || !intersect(fp(it), sr)) return;
+        if (it.h && sh) {
+          if (it.h > sh + 0.01) {
+            list.push(it.name + " is taller than " + which + " (" + fmt(it.h) + " against " + fmt(sh) + "), so it can't sit against the wall there");
+            bad[it.id] = 1;
+          }
+          return;
+        }
+        notes.push(it.name + " reaches under " + which + ". " +
+          (sh ? "Add the piece's height to check it fits under " + fmt(sh) + "."
+              : it.h ? "Add the sill's height to check whether " + fmt(it.h) + " fits under it."
+              : "Add both heights to check it fits under."));
+      });
+    });
+    S.doors.forEach(function (d, di) {
+      var tr = trimRects(d); if (!tr.length) return;
+      var which = S.doors.length > 1 ? "door " + (di + 1) + "'s trim" : "the door trim";
+      solid.forEach(function (it) {
+        if (it.fixed || !tr.some(function (r) { return intersect(fp(it), r); })) return;
+        notes.push(it.name + " overlaps " + which + ", so it can't sit flat against the wall there.");
+      });
+    });
+    return { list: list, notes: notes, bad: bad, badZone: badZone, open: Math.max(0, 1 - used / (W * L)) };
+  }
+
+  function gaps(it) {
+    var r = fp(it), W = S.room.w, L = S.room.l;
+    var others = it.kind === "rug" ? [] : S.items.filter(function (o) { return o !== it && o.kind !== "rug" && !tucks(it, o); }).map(fp)
+      // a piece low enough to slide under a sill is measured to the wall, not the sill
+      .concat(S.windows.filter(function (wn) { return !(it.h && wn.sill && wn.sill.height && it.h <= wn.sill.height); }).map(sillRect).filter(Boolean))
+      .concat([].concat.apply([], S.doors.map(trimRects)));
+    function ov(a0, a1, b0, b1) { return Math.min(a1, b1) - Math.max(a0, b0) > 0.01; }
+    var left = 0, right = W, top = 0, bottom = L;
+    others.forEach(function (o) {
+      if (ov(r.y, r.y + r.h, o.y, o.y + o.h)) {
+        if (o.x + o.w <= r.x + 0.01) left = Math.max(left, o.x + o.w);
+        if (o.x >= r.x + r.w - 0.01) right = Math.min(right, o.x);
+      }
+      if (ov(r.x, r.x + r.w, o.x, o.x + o.w)) {
+        if (o.y + o.h <= r.y + 0.01) top = Math.max(top, o.y + o.h);
+        if (o.y >= r.y + r.h - 0.01) bottom = Math.min(bottom, o.y);
+      }
+    });
+    var cy = r.y + r.h / 2, cx = r.x + r.w / 2;
+    return [
+      { h: true, a: left, b: r.x, at: cy },
+      { h: true, a: r.x + r.w, b: right, at: cy },
+      { h: false, a: top, b: r.y, at: cx },
+      { h: false, a: r.y + r.h, b: bottom, at: cx }
+    ];
+  }
+
+  // ---------- drawing ----------
+  var M = T + 30;
+  function esc(s) { return String(s).replace(/[&<>"]/g, function (c) { return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]; }); }
+  function rectTag(r, attrs) { return '<rect x="' + r.x + '" y="' + r.y + '" width="' + r.w + '" height="' + r.h + '" ' + attrs + "/>"; }
+
+  function renderPlan() {
+    var W = S.room.w, L = S.room.l;
+    var vbW = W + 2 * M, vbH = L + 2 * M;
+    svg.setAttribute("viewBox", (-M) + " " + (-M) + " " + vbW + " " + vbH);
+    svg.style.aspectRatio = vbW + " / " + vbH;
+    var box = svg.getBoundingClientRect();
+    var ppu = Math.min(box.width / vbW, box.height / vbH);
+    if (!isFinite(ppu) || ppu <= 0) ppu = 3;
+    var fs = 13.5 / ppu, fsS = 11.5 / ppu;
+    ppuLast = ppu;
+    var A = analyse();
+    var gstep = S.unit === "cm" ? 50 / 2.54 : 12;
+    var o = [];
+    var NS = 'vector-effect="non-scaling-stroke"';
+
+    o.push('<defs><pattern id="grid" width="' + gstep + '" height="' + gstep + '" patternUnits="userSpaceOnUse"><path d="M ' + gstep + ' 0 L 0 0 0 ' + gstep + '" fill="none" stroke="var(--grid)" stroke-width="1" ' + NS + '/></pattern>' +
+      '<pattern id="hatch" width="5" height="5" patternUnits="userSpaceOnUse" patternTransform="rotate(45)"><rect width="5" height="5" fill="var(--accent-soft)" fill-opacity=".5"/><line x1="0" y1="0" x2="0" y2="5" stroke="var(--accent)" stroke-opacity=".45" stroke-width="1" ' + NS + '/></pattern>' +
+      '<pattern id="hatchBad" width="5" height="5" patternUnits="userSpaceOnUse" patternTransform="rotate(45)"><rect width="5" height="5" fill="var(--bad-soft)" fill-opacity=".6"/><line x1="0" y1="0" x2="0" y2="5" stroke="var(--bad)" stroke-opacity=".5" stroke-width="1" ' + NS + '/></pattern></defs>');
+    // walls + floor
+    o.push(rectTag({ x: -T, y: -T, w: W + 2 * T, h: L + 2 * T }, 'fill="var(--wall)"'));
+    o.push(rectTag({ x: 0, y: 0, w: W, h: L }, 'fill="var(--sheet)"'));
+    o.push(rectTag({ x: 0, y: 0, w: W, h: L }, 'fill="url(#grid)"'));
+    // the walls themselves are the targets for showing free lengths (doors and windows sit on top)
+    [["N", { x: -T, y: -T, w: W + 2 * T, h: T + 1 }], ["S", { x: -T, y: L - 1, w: W + 2 * T, h: T + 1 }],
+     ["W", { x: -T, y: 0, w: T + 1, h: L }], ["E", { x: W - 1, y: 0, w: T + 1, h: L }]].forEach(function (wr) {
+      o.push(rectTag(wr[1], 'class="wall-hit" data-wall="' + wr[0] + '" fill="transparent"'));
+    });
+
+    // windows
+    function outline(wall, u0, u1) {
+      o.push(rectTag(wallRect(wall, u0, u1, -T - 3, 3), 'fill="none" stroke="var(--accent)" stroke-width="3" ' + NS));
+    }
+    var hiOpen = wizHi || selOpening;
+    S.windows.forEach(function (wn, wi) {
+      var r = wallRect(wn.wall, wn.offset, wn.offset + wn.width, -T, 0);
+      o.push('<g class="opening-hit" data-win="' + wi + '">');
+      o.push(rectTag(wallRect(wn.wall, wn.offset, wn.offset + wn.width, -T - 5, 5), 'fill="transparent"'));
+      var sr = sillRect(wn);
+      if (sr) o.push(rectTag(sr, 'fill="var(--sill)" stroke="var(--wall)" stroke-width="1" ' + NS));
+      o.push(rectTag(r, 'fill="var(--sheet)" stroke="var(--wall)" stroke-width="1" ' + NS));
+      var a = wallPt(wn.wall, wn.offset, -T / 2), b = wallPt(wn.wall, wn.offset + wn.width, -T / 2);
+      o.push('<line x1="' + a[0] + '" y1="' + a[1] + '" x2="' + b[0] + '" y2="' + b[1] + '" stroke="var(--glass)" stroke-width="3" ' + NS + "/>");
+      o.push("</g>");
+      if (hiOpen && hiOpen.kind === "window" && hiOpen.idx === wi) outline(wn.wall, wn.offset, wn.offset + wn.width);
+    });
+
+    // doors
+    S.doors.forEach(function (d, di) {
+      var g = doorGeom(d);
+      o.push('<g class="opening-hit" data-door="' + di + '">');
+      o.push(rectTag(wallRect(d.wall, d.offset, d.offset + d.width, -T - 5, 5), 'fill="transparent"'));
+      o.push(rectTag(wallRect(d.wall, d.offset, d.offset + d.width, -T, 0.5), 'fill="var(--sheet)"'));
+      trimRects(d).forEach(function (r) { o.push(rectTag(r, 'fill="var(--sill)" stroke="var(--wall)" stroke-width="1" ' + NS)); });
+      [d.offset, d.offset + d.width].forEach(function (u) {
+        var a = wallPt(d.wall, u, -T), b = wallPt(d.wall, u, 0);
+        o.push('<line x1="' + a[0] + '" y1="' + a[1] + '" x2="' + b[0] + '" y2="' + b[1] + '" stroke="var(--wall)" stroke-width="2" ' + NS + "/>");
+      });
+      if (d.swing === "in" || d.swing === "out") {
+        var inward = d.swing === "in", base = inward ? 0 : -T, dir = inward ? 1 : -1;
+        var hp = wallPt(d.wall, g.hu, base), pts = [];
+        for (var k = 0; k <= 18; k++) {
+          var ang = (k / 18) * Math.PI / 2;
+          var p = wallPt(d.wall, g.hu + g.s * d.width * Math.sin(ang), base + dir * d.width * Math.cos(ang));
+          pts.push(p[0].toFixed(2) + "," + p[1].toFixed(2));
+        }
+        if (inward) o.push('<polygon points="' + hp[0] + "," + hp[1] + " " + pts.join(" ") + '" fill="var(--swing)" stroke="none"/>');
+        o.push('<polyline points="' + pts.join(" ") + '" fill="none" stroke="var(--furn-line)" stroke-width="1" stroke-dasharray="4 3" ' + NS + "/>");
+        o.push('<line x1="' + hp[0] + '" y1="' + hp[1] + '" x2="' + pts[0].split(",")[0] + '" y2="' + pts[0].split(",")[1] + '" stroke="var(--ink)" stroke-width="2.5" ' + NS + "/>");
+      }
+      o.push("</g>");
+      if (hiOpen && hiOpen.kind === "door" && hiOpen.idx === di) { var sp = doorSpan(d); outline(d.wall, sp[0], sp[1]); }
+    });
+
+    // overall dimensions
+    var dy = -T - 14, dx = -T - 14, tk = 4;
+    o.push('<g stroke="var(--ink2)" stroke-width="1" ' + NS + ">" +
+      '<line x1="0" y1="' + dy + '" x2="' + W + '" y2="' + dy + '" ' + NS + "/>" +
+      '<line x1="0" y1="' + (dy - tk) + '" x2="0" y2="' + (dy + tk) + '" ' + NS + "/>" +
+      '<line x1="' + W + '" y1="' + (dy - tk) + '" x2="' + W + '" y2="' + (dy + tk) + '" ' + NS + "/>" +
+      '<line x1="' + dx + '" y1="0" x2="' + dx + '" y2="' + L + '" ' + NS + "/>" +
+      '<line x1="' + (dx - tk) + '" y1="0" x2="' + (dx + tk) + '" y2="0" ' + NS + "/>" +
+      '<line x1="' + (dx - tk) + '" y1="' + L + '" x2="' + (dx + tk) + '" y2="' + L + '" ' + NS + "/></g>");
+    var lbl = 'font-family="Archivo, Arial, sans-serif" font-weight="650" font-size="' + fs + '" fill="var(--ink)" text-anchor="middle" style="font-stretch:88%" paint-order="stroke" stroke="var(--paper)" stroke-width="' + (4 / ppu) + '"';
+    o.push('<text x="' + W / 2 + '" y="' + (dy + fs * 0.35) + '" ' + lbl.replace("var(--paper)", "var(--sheet)") + ">" + esc(fmt(W)) + "</text>");
+    o.push('<text x="' + dx + '" y="' + (L / 2 + fs * 0.35) + '" transform="rotate(-90 ' + dx + " " + L / 2 + ')" ' + lbl.replace("var(--paper)", "var(--sheet)") + ">" + esc(fmt(L)) + "</text>");
+
+    // furniture, rugs first
+    var rugs = S.items.filter(function (i) { return i.kind === "rug"; });
+    var solids = S.items.filter(function (i) { return i.kind !== "rug"; });
+    var zones = [];
+    solids.forEach(function (it) {
+      var z = clearZone(it); if (!z) return;
+      var zb = !!A.badZone[it.id];
+      zones.push('<g class="piece" data-id="' + it.id + '">' + rectTag(z, 'fill="url(#' + (zb ? "hatchBad" : "hatch") + ')" stroke="' + (zb ? "var(--bad)" : "var(--accent)") + '" stroke-width="1" stroke-dasharray="4 3" ' + NS));
+      var vz = z.h > z.w, zspan = vz ? z.h : z.w, zacross = vz ? z.w : z.h, word = it.kind === "chair" ? "pull-out" : "keep clear";
+      var zf = fsS * 0.85;
+      if (word.length * zf * 0.52 <= zspan - 2 && zacross >= zf * 1.3) {
+        var zx = z.x + z.w / 2, zy = z.y + z.h / 2;
+        zones.push('<text x="' + zx + '" y="' + (zy + zf * 0.35) + '"' + (vz ? ' transform="rotate(-90 ' + zx + " " + zy + ')"' : "") + ' text-anchor="middle" font-family="Archivo, Arial, sans-serif" font-size="' + zf + '" font-weight="600" fill="' + (zb ? "var(--bad)" : "var(--accent)") + '" paint-order="stroke" stroke="var(--sheet)" stroke-width="' + (3 / ppu) + '" pointer-events="none">' + word + "</text>");
+      }
+      zones.push("</g>");
+    });
+    var ordered = rugs.concat(solids.filter(function (i) { return i.table; }), solids.filter(function (i) { return !i.table; }));
+    var drawn = 0;
+    ordered.forEach(function (it) {
+      if (drawn++ === rugs.length) o.push(zones.join(""));
+      var r = fp(it), isRug = it.kind === "rug", isBad = !!A.bad[it.id], isSel = it.id === sel;
+      var fill = isBad ? "var(--bad-soft)" : isRug ? "var(--rug)" : it.fixed ? "var(--fixed)" : "var(--furn)";
+      var stroke = isSel ? "var(--accent)" : isBad ? "var(--bad)" : isRug ? "var(--rug-line)" : it.fixed ? "var(--wall)" : "var(--furn-line)";
+      var sw = isSel ? 2.5 : 1.2;
+      var dash = isRug && !isSel ? ' stroke-dasharray="5 4"' : "";
+      var opacity = isRug ? ' fill-opacity="' + (isBad ? 1 : 0.9) + '"' : "";
+      o.push('<g class="piece' + (it.fixed ? " fixed" : "") + '" data-id="' + it.id + '">');
+      o.push(rectTag(r, 'rx="' + (isRug ? 0 : 1.5) + '" fill="' + fill + '"' + opacity + ' stroke="' + stroke + '" stroke-width="' + sw + '"' + dash + " " + NS));
+      // label
+      var vertical = r.h > r.w * 1.25;
+      var span = vertical ? r.h : r.w, across = vertical ? r.w : r.h;
+      var label = it.name, f = fsS, nameW = label.length * f * 0.52;
+      if (nameW > span - 4) { f = fsS * 0.82; nameW = label.length * f * 0.52; }
+      if (nameW > span - 2) { label = label.split(" ").pop(); nameW = label.length * f * 0.52; }
+      var show = nameW <= span - 2 && across >= f * 1.3;
+      var showDims = show && across >= f * 2.8;
+      if (isRug && !isSel) showDims = false;
+      if (show) {
+        var cx = r.x + r.w / 2, cy = r.y + r.h / 2;
+        var rot = vertical ? ' transform="rotate(-90 ' + cx + " " + cy + ')"' : "";
+        var tcol = isBad ? "var(--bad)" : "var(--ink)";
+        var y1 = showDims ? cy - f * 0.2 : cy + f * 0.35;
+        o.push('<text x="' + cx + '" y="' + y1 + '"' + rot + ' text-anchor="middle" font-family="Archivo, Arial, sans-serif" font-size="' + f + '" font-weight="650" fill="' + tcol + '" pointer-events="none">' + esc(label) + "</text>");
+        if (showDims) {
+          o.push('<text x="' + cx + '" y="' + (cy + f * 1.05) + '"' + rot + ' text-anchor="middle" font-family="Archivo, Arial, sans-serif" font-size="' + f * 0.9 + '" fill="var(--ink2)" style="font-stretch:88%" pointer-events="none">' + esc(fmt(it.w) + " × " + fmt(it.d)) + "</text>");
+        }
+      }
+      o.push("</g>");
+    });
+
+    // clearance lines around the selected piece
+    var it = S.items.find(function (i) { return i.id === sel; });
+    if (it) {
+      gaps(it).forEach(function (gp) {
+        var len = gp.b - gp.a;
+        if (len < 0.75) return;
+        var col = len >= WALKWAY ? "var(--ok)" : "var(--accent)";
+        var x1, y1, x2, y2, t1, t2;
+        if (gp.h) { x1 = gp.a; x2 = gp.b; y1 = y2 = gp.at; }
+        else { y1 = gp.a; y2 = gp.b; x1 = x2 = gp.at; }
+        o.push('<g pointer-events="none" stroke="' + col + '" stroke-width="1.5" ' + NS + ">");
+        o.push('<line x1="' + x1 + '" y1="' + y1 + '" x2="' + x2 + '" y2="' + y2 + '" ' + NS + "/>");
+        var tick = 3;
+        if (gp.h) {
+          o.push('<line x1="' + x1 + '" y1="' + (y1 - tick) + '" x2="' + x1 + '" y2="' + (y1 + tick) + '" ' + NS + "/>");
+          o.push('<line x1="' + x2 + '" y1="' + (y2 - tick) + '" x2="' + x2 + '" y2="' + (y2 + tick) + '" ' + NS + "/>");
+        } else {
+          o.push('<line x1="' + (x1 - tick) + '" y1="' + y1 + '" x2="' + (x1 + tick) + '" y2="' + y1 + '" ' + NS + "/>");
+          o.push('<line x1="' + (x2 - tick) + '" y1="' + y2 + '" x2="' + (x2 + tick) + '" y2="' + y2 + '" ' + NS + "/>");
+        }
+        o.push("</g>");
+        var mx = (x1 + x2) / 2, my = (y1 + y2) / 2;
+        o.push('<text x="' + mx + '" y="' + (my + fs * 0.35) + '" text-anchor="middle" font-family="Archivo, Arial, sans-serif" font-size="' + fs + '" font-weight="700" fill="' + col + '" style="font-stretch:88%" paint-order="stroke" stroke="var(--sheet)" stroke-width="' + (5 / ppu) + '" stroke-linejoin="round" pointer-events="none">' + esc(fmt(len)) + "</text>");
+      });
+    }
+
+    // free lengths along a hovered or tapped wall
+    var showWall = drag ? null : pinnedWall || hoverWall;
+    if (showWall) {
+      var band = wallRect(showWall, 0, wallLen(showWall), -T, 0);
+      o.push(rectTag(band, 'fill="var(--accent)" fill-opacity=".35" pointer-events="none"'));
+      var lab = 'font-family="Archivo, Arial, sans-serif" text-anchor="middle" paint-order="stroke" stroke="var(--sheet)" stroke-linejoin="round" pointer-events="none"';
+      wallStretches(showWall).forEach(function (seg) {
+        var len = seg.u1 - seg.u0;
+        seg.profile.forEach(function (pc) {
+          o.push(rectTag(wallRect(showWall, pc.u0, pc.u1, 0, pc.depth), 'fill="var(--accent-soft)" fill-opacity=".45" stroke="var(--accent)" stroke-width="1" stroke-dasharray="3 3" pointer-events="none" ' + NS));
+        });
+        var v = 9, a = wallPt(showWall, seg.u0, v), b = wallPt(showWall, seg.u1, v);
+        o.push('<g stroke="var(--accent)" stroke-width="1.8" pointer-events="none" ' + NS + '><line x1="' + a[0] + '" y1="' + a[1] + '" x2="' + b[0] + '" y2="' + b[1] + '" ' + NS + "/>");
+        [seg.u0, seg.u1].forEach(function (u) { var t0 = wallPt(showWall, u, v - 4), t1 = wallPt(showWall, u, v + 4); o.push('<line x1="' + t0[0] + '" y1="' + t0[1] + '" x2="' + t1[0] + '" y2="' + t1[1] + '" ' + NS + "/>"); });
+        o.push("</g>");
+        var mid = (seg.u0 + seg.u1) / 2, side = showWall === "W" || showWall === "E";
+        var room = len * ppuLast > 70, c1 = wallPt(showWall, mid, v + fs * 1.3), c2 = wallPt(showWall, mid, v + fs * 2.5);
+        var rot = function (c) { return side ? ' transform="rotate(-90 ' + c[0] + " " + c[1] + ')"' : ""; };
+        o.push('<text x="' + c1[0] + '" y="' + (c1[1] + fs * 0.35) + '"' + rot(c1) + " " + lab + ' font-size="' + fs + '" font-weight="750" fill="var(--accent)" stroke-width="' + (5 / ppu) + '">' + esc(fmt(len) + (room ? " free" : "")) + "</text>");
+        if (room) {
+          // the longest wording that fits inside the stretch
+          var varies = seg.maxDepth - seg.depth > 1, sill = seg.sill && seg.sill.height ? " · sill " + fmt(seg.sill.height) + " high" : "";
+          var words = (varies
+            ? [fmt(seg.depth) + " deep all along, up to " + fmt(seg.maxDepth) + " in places", fmt(seg.depth) + " to " + fmt(seg.maxDepth) + " deep"]
+            : ["up to " + fmt(seg.depth) + " deep"]).map(function (t) { return t + sill; }).concat([fmt(seg.depth) + " deep"]);
+          var fit = words.filter(function (t) { return t.length * fsS * 0.52 <= len - 4; })[0];
+          if (fit) o.push('<text x="' + c2[0] + '" y="' + (c2[1] + fs * 0.35) + '"' + rot(c2) + " " + lab + ' font-size="' + fsS + '" font-weight="600" fill="var(--ink2)" stroke-width="' + (4 / ppu) + '">' + esc(fit) + "</text>");
+        }
+      });
+    }
+
+    // snapping guides while dragging
+    snapGuides.forEach(function (g) {
+      var dragged = S.items.find(function (i) { return drag && i.id === drag.id; }); if (!dragged) return;
+      var r = fp(dragged), gl = 'stroke="var(--accent)" stroke-width="1.2" stroke-dasharray="5 4" pointer-events="none" ' + NS;
+      var tx, ty;
+      if (g.kind === "line") {
+        if (g.axis === "x") { o.push('<line x1="' + g.at + '" y1="0" x2="' + g.at + '" y2="' + L + '" ' + gl + "/>"); tx = g.at; ty = r.y - fs * 0.8; }
+        else { o.push('<line x1="0" y1="' + g.at + '" x2="' + W + '" y2="' + g.at + '" ' + gl + "/>"); tx = r.x + r.w / 2; ty = g.at - fs * 0.6; }
+      } else {
+        var c = g.axis === "x" ? r.y + r.h / 2 : r.x + r.w / 2, s0 = g.axis === "x" ? r.x : r.y, s1 = s0 + (g.axis === "x" ? r.w : r.h);
+        [[g.a, s0], [s1, g.b]].forEach(function (seg) {
+          if (seg[1] - seg[0] < 0.5) return;
+          var x1 = g.axis === "x" ? seg[0] : c, y1 = g.axis === "x" ? c : seg[0], x2 = g.axis === "x" ? seg[1] : c, y2 = g.axis === "x" ? c : seg[1];
+          o.push('<line x1="' + x1 + '" y1="' + y1 + '" x2="' + x2 + '" y2="' + y2 + '" stroke="var(--accent)" stroke-width="1.5" pointer-events="none" ' + NS + "/>");
+          o.push('<text x="' + (x1 + x2) / 2 + '" y="' + ((y1 + y2) / 2 + fsS * 0.35) + '" font-family="Archivo, Arial, sans-serif" text-anchor="middle" font-size="' + fsS + '" font-weight="700" fill="var(--accent)" paint-order="stroke" stroke="var(--sheet)" stroke-width="' + (4 / ppu) + '" pointer-events="none">= ' + esc(fmt(seg[1] - seg[0])) + "</text>");
+        });
+        tx = r.x + r.w / 2; ty = g.axis === "x" ? r.y - fs * 0.8 : r.y - fs * 0.8 - (snapGuides.length > 1 ? fs * 1.3 : 0);
+      }
+      if (g === snapGuides[1]) ty -= fs * 1.3;
+      o.push('<text x="' + tx + '" y="' + ty + '" font-family="Archivo, Arial, sans-serif" text-anchor="middle" font-size="' + fsS + '" font-weight="700" fill="var(--sheet)" stroke="var(--accent)" stroke-width="' + (7 / ppu) + '" paint-order="stroke" stroke-linejoin="round" pointer-events="none">' + esc(g.text) + "</text>");
+    });
+
+    svg.innerHTML = o.join("");
+    renderStatus(A);
+  }
+
+  function renderStatus(A) {
+    var st = $("status"), cl = $("conflicts");
+    if (A.list.length === 0) {
+      st.innerHTML = '<span class="pill ok">Everything fits</span><span class="hint">No overlaps, no doorways blocked.</span>';
+      cl.hidden = true; cl.innerHTML = "";
+    } else {
+      st.innerHTML = '<span class="pill bad">' + A.list.length + (A.list.length === 1 ? " problem" : " problems") + "</span>";
+      cl.hidden = false;
+      cl.innerHTML = A.list.map(function (t) { return "<li>" + esc(t) + "</li>"; }).join("");
+    }
+    var nl = $("notes");
+    nl.hidden = !A.notes.length;
+    nl.innerHTML = A.notes.map(function (t) { return "<li>" + esc(t) + "</li>"; }).join("");
+    $("openPct").textContent = Math.round(A.open * 100) + "%";
+    $("roomTitle").textContent = S.name || "Untitled room";
+    $("ledeRoom").textContent = fmt(S.room.w) + " × " + fmt(S.room.l) + " room";
+    $("floorArea").textContent = area(S.room.w * S.room.l);
+  }
+
+  // ---------- panel ----------
+  function selectOpening(kind, idx) {
+    selOpening = { kind: kind, idx: idx };
+    sel = null;
+    showTab("room");
+    renderPanel();
+    renderPlan();
+    var card = $("openings").querySelector('[data-card="' + kind + idx + '"]');
+    if (card) card.scrollIntoView({ block: "nearest", behavior: "smooth" });
+  }
+  function selected() { return S.items.find(function (i) { return i.id === sel; }) || null; }
+
+  function setVal(id, v) { var el = $(id); if (document.activeElement !== el) el.value = v; el.removeAttribute("aria-invalid"); }
+
+  function renderPanel() {
+    var it = selected();
+    ["selName", "selW", "selD", "selH", "selClear", "btnRotate", "btnDup", "btnDel"].forEach(function (id) { $(id).disabled = !it; });
+    setVal("selName", it ? it.name : "");
+    setVal("selW", it ? fmtInput(it.w) : "");
+    setVal("selD", it ? fmtInput(it.d) : "");
+    setVal("selClear", it && it.clear ? fmtInput(it.clear) : "");
+    setVal("selH", it && it.h ? fmtInput(it.h) : "");
+    $("selFixed").disabled = !it;
+    $("selFixed").checked = !!(it && it.fixed);
+    $("btnRotate").disabled = !it || !!it.fixed;
+    $("selClear").disabled = !it || it.kind === "rug";
+    showMsg("", "selMsg");
+    setVal("roomName", S.name || "");
+    setVal("roomW", fmtInput(S.room.w));
+    setVal("roomL", fmtInput(S.room.l));
+    syncUnitToggles();
+    $("unitHint").textContent = S.unit === "cm"
+      ? "Type centimetres, like 442, or metres, like 4.42 m."
+      : "Type 14' 6\" or 14 6. A bare number means feet for the room and inches for furniture, doors and windows.";
+    renderOpenings();
+  }
+
+  function wallOptions(cur) {
+    var names = { N: "Top wall", E: "Right wall", S: "Bottom wall", W: "Left wall" };
+    return ["N", "E", "S", "W"].map(function (w) { return '<option value="' + w + '"' + (w === cur ? " selected" : "") + ">" + names[w] + "</option>"; }).join("");
+  }
+  function fromLabel(wall) { return wall === "N" || wall === "S" ? "From the left end" : "From the top end"; }
+
+  function renderOpenings() {
+    var h = [];
+    S.doors.forEach(function (d, i) {
+      var horiz = d.wall === "N" || d.wall === "S", f = "door." + i + ".";
+      h.push('<div class="opening' + (selOpening && selOpening.kind === "door" && selOpening.idx === i ? " active" : "") + '" data-card="door' + i + '"><div class="head">Door' + (S.doors.length > 1 ? " " + (i + 1) : "") + '<button type="button" data-rmdoor="' + i + '">Remove</button></div>' +
+        '<label>Wall<select id="door' + i + '-wall" data-f="' + f + 'wall">' + wallOptions(d.wall) + "</select></label>" +
+        '<label>Opens<select id="door' + i + '-swing" data-f="' + f + 'swing">' + [["in", "Into the room"], ["out", "Out of the room"], ["none", "No door, an opening"]].map(function (c) { return '<option value="' + c[0] + '"' + (d.swing === c[0] ? " selected" : "") + ">" + c[1] + "</option>"; }).join("") + "</select></label>" +
+        '<label>Hinges on<select id="door' + i + '-hinge" data-f="' + f + 'hinge"><option value="start"' + (d.hinge === "start" ? " selected" : "") + ">" + (horiz ? "Left side" : "Top side") + '</option><option value="end"' + (d.hinge === "end" ? " selected" : "") + ">" + (horiz ? "Right side" : "Bottom side") + "</option></select></label>" +
+        '<label>Opening width<input id="door' + i + '-width" data-f="' + f + 'width" type="text" inputmode="decimal" value="' + esc(fmtInput(d.width)) + '"></label>' +
+        '<label style="grid-column:1/-1">' + fromLabel(d.wall) + '<input id="door' + i + '-offset" data-f="' + f + 'offset" type="text" inputmode="decimal" value="' + esc(fmtInput(d.offset)) + '"></label>' +
+        (d.trim
+          ? '<div class="head sub">Door trim<button type="button" data-rmtrim="' + i + '">Remove trim</button></div>' +
+            '<label>' + (horiz ? "Left side" : "Top side") + '<input id="door' + i + '-trim-a" data-f="' + f + 'trim.a" type="text" inputmode="decimal" value="' + esc(fmtInput(d.trim.a || 0)) + '"></label>' +
+            '<label>' + (horiz ? "Right side" : "Bottom side") + '<input id="door' + i + '-trim-b" data-f="' + f + 'trim.b" type="text" inputmode="decimal" value="' + esc(fmtInput(d.trim.b || 0)) + '"></label>' +
+            '<label style="grid-column:1/-1">Sticks out from the wall<input id="door' + i + '-trim-depth" data-f="' + f + 'trim.depth" type="text" inputmode="decimal" value="' + esc(fmtInput(d.trim.depth)) + '"></label>' +
+            '<p class="hint" style="grid-column:1/-1">Overall with trim: ' + esc(fmt(doorSpan(d)[1] - doorSpan(d)[0])) + '. The door still swings only within the ' + esc(fmt(d.width)) + ' opening.</p>'
+          : '<button type="button" class="add-sill" data-addtrim="' + i + '">Add door trim</button>') +
+        "</div>");
+    });
+    S.windows.forEach(function (wn, i) {
+      h.push('<div class="opening' + (selOpening && selOpening.kind === "window" && selOpening.idx === i ? " active" : "") + '" data-card="window' + i + '"><div class="head">Window ' + (i + 1) + '<button type="button" data-rmwin="' + i + '">Remove</button></div>' +
+        '<label class="full" style="grid-column:1/-1">Wall<select id="win' + i + '-wall" data-f="win.' + i + '.wall">' + wallOptions(wn.wall) + "</select></label>" +
+        '<label>' + fromLabel(wn.wall) + ' to the frame<input id="win' + i + '-offset" data-f="win.' + i + '.offset" type="text" inputmode="decimal" value="' + esc(fmtInput(wn.offset)) + '"></label>' +
+        '<label>Width<input id="win' + i + '-width" data-f="win.' + i + '.width" type="text" inputmode="decimal" value="' + esc(fmtInput(wn.width)) + '"></label>' +
+        (wn.sill
+          ? '<div class="head sub">Window sill<button type="button" data-rmsill="' + i + '">Remove sill</button></div>' +
+            '<label>Sill length<input id="win' + i + '-sill-len" data-f="win.' + i + '.sill.len" type="text" inputmode="decimal" value="' + esc(fmtInput(wn.sill.len)) + '"></label>' +
+            '<label>Sticks out<input id="win' + i + '-sill-depth" data-f="win.' + i + '.sill.depth" type="text" inputmode="decimal" value="' + esc(fmtInput(wn.sill.depth)) + '"></label>' +
+            '<label style="grid-column:1/-1">Height above the floor<input id="win' + i + '-sill-height" data-f="win.' + i + '.sill.height" type="text" inputmode="decimal" placeholder="optional" value="' + (wn.sill.height ? esc(fmtInput(wn.sill.height)) : "") + '"></label>'
+          : '<button type="button" class="add-sill" data-addsill="' + i + '">Add a window sill</button>') +
+        "</div>");
+    });
+    $("openings").innerHTML = h.join("");
+  }
+
+  function showMsg(t, msgId) { var m = $(msgId || "msg"); m.textContent = t || ""; m.hidden = !t; }
+  // opts.msg: where to explain a bad value; opts.zero: allow 0 (and a blank field reads as 0)
+  function readLen(el, kind, opts) {
+    opts = opts || {};
+    var raw = el.value.trim();
+    var v = opts.zero && (raw === "" || /^0+(\.0*)?\s*("|in|cm|'|ft)?$/i.test(raw)) ? 0 : parseLen(raw, plainFor(kind));
+    if (!isFinite(v) || v < 0 || (v === 0 && !opts.zero)) {
+      el.setAttribute("aria-invalid", "true");
+      showMsg("Couldn't read “" + el.value + "”. Try " + (S.unit === "cm" ? "80 cm" : kind === "ft" ? "14' 6\"" : "32\" or 2' 8\"") + ".", opts.msg);
+      return null;
+    }
+    el.removeAttribute("aria-invalid");
+    showMsg("", opts.msg);
+    return v;
+  }
+  function clampOpening(op) {
+    var len = wallLen(op.wall);
+    op.width = Math.min(op.width, len);
+    op.offset = Math.max(0, Math.min(op.offset, len - op.width));
+  }
+  function commit() { save(); scheduleWrite(); renderPlan(); }
+
+  // ---------- events ----------
+  function svgPoint(e) {
+    var pt = svg.createSVGPoint();
+    pt.x = e.clientX; pt.y = e.clientY;
+    return pt.matrixTransform(svg.getScreenCTM().inverse());
+  }
+  function snapTo(it) {
+    var r = fp(it), g = grain();
+    it.x = Math.round(it.x / g) * g;
+    it.y = Math.round(it.y / g) * g;
+    if (Math.abs(it.x) < SNAP_WALL) it.x = 0;
+    if (Math.abs(it.y) < SNAP_WALL) it.y = 0;
+    if (Math.abs(it.x + r.w - S.room.w) < SNAP_WALL) it.x = S.room.w - r.w;
+    if (Math.abs(it.y + r.h - S.room.l) < SNAP_WALL) it.y = S.room.l - r.h;
+  }
+
+  svg.addEventListener("pointerdown", function (e) {
+    var wg = e.target.closest && e.target.closest("[data-wall]");
+    if (wg) {
+      var w = wg.getAttribute("data-wall");
+      pinnedWall = pinnedWall === w ? null : w;
+      renderPlan();
+      return;
+    }
+    var og = e.target.closest && e.target.closest("[data-win],[data-door]");
+    if (og && !wiz) {
+      e.preventDefault();
+      var isWin = og.hasAttribute("data-win");
+      selectOpening(isWin ? "window" : "door", +og.getAttribute(isWin ? "data-win" : "data-door"));
+      return;
+    }
+    var g = e.target.closest && e.target.closest("[data-id]");
+    if (!g) {
+      if (sel !== null || selOpening || pinnedWall) { sel = null; selOpening = null; pinnedWall = null; renderPanel(); renderPlan(); }
+      return;
+    }
+    selOpening = null;
+    var id = +g.getAttribute("data-id");
+    var it = S.items.find(function (i) { return i.id === id; });
+    if (!it) return;
+    e.preventDefault();
+    if (it.fixed) { svg.focus({ preventScroll: true }); if (sel !== id) { sel = id; renderPanel(); } renderPlan(); return; }
+    svg.focus({ preventScroll: true });
+    var p = svgPoint(e);
+    drag = { id: id, dx: p.x - it.x, dy: p.y - it.y, pid: e.pointerId };
+    try { svg.setPointerCapture(e.pointerId); } catch (err) {}
+    svg.classList.add("dragging");
+    if (sel !== id) { sel = id; renderPanel(); }
+    renderPlan();
+  });
+  svg.addEventListener("pointermove", function (e) {
+    if (!drag) {
+      var wt = e.target.closest && e.target.closest("[data-wall]"), hw = wt ? wt.getAttribute("data-wall") : null;
+      if (hw !== hoverWall) { hoverWall = hw; renderPlan(); }
+      return;
+    }
+    if (e.pointerId !== drag.pid) return;
+    var it = S.items.find(function (i) { return i.id === drag.id; });
+    if (!it) return;
+    var p = svgPoint(e);
+    it.x = p.x - drag.dx; it.y = p.y - drag.dy;
+    snapTo(it);
+    snapGuides = e.altKey ? [] : smartSnap(it);
+    renderPlan();
+  });
+  svg.addEventListener("pointerleave", function () { if (!drag && hoverWall) { hoverWall = null; renderPlan(); } });
+
+  // SketchUp-style inference: while a piece is dragged it snaps its centre to the middle of a wall,
+  // of the free stretch between two things on that wall (corner, door, window, another piece), onto
+  // a window or door, halfway between its neighbours, or lines up with another piece. Hold Option
+  // (Alt) to drag freely.
+  var SNAP_PX = 9, snapGuides = [], ppuLast = 3;
+  function smartSnap(it) {
+    var r = fp(it), W = S.room.w, L = S.room.l, thr = SNAP_PX / ppuLast, found = { x: null, y: null };
+    var flushX = Math.abs(r.x) < 0.01 || Math.abs(r.x + r.w - W) < 0.01;
+    var flushY = Math.abs(r.y) < 0.01 || Math.abs(r.y + r.h - L) < 0.01;
+    function offer(axis, start, guide, bias) {
+      var now = axis === "x" ? r.x : r.y, d = Math.abs(start - now) + (bias || 0);
+      if (Math.abs(start - now) <= thr && (!found[axis] || d < found[axis].d)) found[axis] = { start: start, d: d, guide: guide };
+    }
+    var size = { x: r.w, y: r.h };
+    // along a wall the piece is near: centre of the wall, of each gap between features, on openings
+    function wallSnaps(wall, axis) {
+      var q = toWall(wall, r); if (q.v0 > 24) return;
+      var f = wallFeatures(wall, it), pts = [{ u: 0, label: "the corner" }, { u: f.len, label: "the corner" }];
+      f.blocks.forEach(function (b) { pts.push({ u: b.u0, label: b.label }, { u: b.u1, label: b.label }); });
+      f.marks.forEach(function (m) { pts.push({ u: m.u0, label: m.label }, { u: m.u1, label: m.label }); });
+      pts.sort(function (a, b) { return a.u - b.u; });
+      for (var i = 0; i + 1 < pts.length; i++) {
+        var a = pts[i], b = pts[i + 1];
+        if (b.u - a.u + 0.01 < size[axis] || a.label === b.label && a.label !== "the corner") continue;
+        offer(axis, (a.u + b.u) / 2 - size[axis] / 2, { kind: "between", axis: axis, a: a.u, b: b.u, text: "Centred between " + a.label + " and " + b.label });
+      }
+      offer(axis, f.len / 2 - size[axis] / 2, { kind: "line", axis: axis, at: f.len / 2, text: "Centred on the wall" }, -0.01);
+      f.marks.forEach(function (m) { offer(axis, (m.u0 + m.u1) / 2 - size[axis] / 2, { kind: "line", axis: axis, at: (m.u0 + m.u1) / 2, text: "Centred on " + m.label }, -0.02); });
+      S.doors.forEach(function (d, i) { if (d.wall === wall) offer(axis, d.offset + d.width / 2 - size[axis] / 2, { kind: "line", axis: axis, at: d.offset + d.width / 2, text: "Centred on " + (S.doors.length > 1 ? "door " + (i + 1) : "the door") }, -0.02); });
+    }
+    // halfway between the nearest things on either side, out in the room
+    function neighbourSnaps(axis) {
+      if (it.kind === "rug") return;
+      var lo = 0, hi = axis === "x" ? W : L, loName = axis === "x" ? "the left wall" : "the top wall", hiName = axis === "x" ? "the right wall" : "the bottom wall";
+      S.items.forEach(function (o) {
+        if (o === it || o.kind === "rug" || tucks(it, o)) return;
+        var b = fp(o);
+        var across = axis === "x" ? Math.min(r.y + r.h, b.y + b.h) - Math.max(r.y, b.y) : Math.min(r.x + r.w, b.x + b.w) - Math.max(r.x, b.x);
+        if (across <= 0.01) return;
+        var b0 = axis === "x" ? b.x : b.y, b1 = axis === "x" ? b.x + b.w : b.y + b.h, me0 = axis === "x" ? r.x : r.y, me1 = me0 + size[axis];
+        if (b1 <= me0 + 0.01 && b1 > lo) { lo = b1; loName = o.name; }
+        if (b0 >= me1 - 0.01 && b0 < hi) { hi = b0; hiName = o.name; }
+      });
+      var walls = /wall$/.test(loName) && /wall$/.test(hiName);
+      if (hi - lo >= size[axis]) offer(axis, (lo + hi) / 2 - size[axis] / 2, { kind: "between", axis: axis, a: lo, b: hi, text: walls ? "Centred in the room" : "Centred between " + loName + " and " + hiName });
+      offer(axis, (axis === "x" ? W : L) / 2 - size[axis] / 2, { kind: "line", axis: axis, at: (axis === "x" ? W : L) / 2, text: "Centred in the room" }, 0.05);
+    }
+    // line up with other pieces: centres first, then edges
+    function alignSnaps(axis) {
+      S.items.forEach(function (o) {
+        if (o === it) return;
+        var b = fp(o), b0 = axis === "x" ? b.x : b.y, bs = axis === "x" ? b.w : b.h;
+        offer(axis, b0 + bs / 2 - size[axis] / 2, { kind: "line", axis: axis, at: b0 + bs / 2, text: "Lined up with the middle of " + o.name }, 0.1);
+        offer(axis, b0, { kind: "line", axis: axis, at: b0, text: "Lined up with " + o.name }, 0.3);
+        offer(axis, b0 + bs - size[axis], { kind: "line", axis: axis, at: b0 + bs, text: "Lined up with " + o.name }, 0.3);
+      });
+    }
+    if (!flushX) { wallSnaps("N", "x"); wallSnaps("S", "x"); neighbourSnaps("x"); alignSnaps("x"); }
+    if (!flushY) { wallSnaps("W", "y"); wallSnaps("E", "y"); neighbourSnaps("y"); alignSnaps("y"); }
+    var guides = [];
+    if (found.x) { it.x = found.x.start; guides.push(found.x.guide); }
+    if (found.y) { it.y = found.y.start; guides.push(found.y.guide); }
+    return guides;
+  }
+  function endDrag(e) {
+    if (!drag || (e && e.pointerId !== drag.pid)) return;
+    drag = null; snapGuides = [];
+    svg.classList.remove("dragging");
+    save(); scheduleWrite();
+  }
+  svg.addEventListener("pointerup", endDrag);
+  svg.addEventListener("pointercancel", endDrag);
+
+  function rotateSel() {
+    var it = selected(); if (!it || it.fixed) return;
+    var r = fp(it), cx = r.x + r.w / 2, cy = r.y + r.h / 2;
+    it.rot = ((it.rot || 0) + 90) % 360;
+    var n = fp(it);
+    it.x = cx - n.w / 2; it.y = cy - n.h / 2;
+    snapTo(it);
+    commit();
+  }
+  svg.addEventListener("keydown", function (e) {
+    var it = selected(); if (!it) return;
+    if (it.fixed && e.key.indexOf("Arrow") === 0) return;
+    var step = e.shiftKey ? 6 : 1, moved = true;
+    if (e.key === "ArrowLeft") it.x -= step;
+    else if (e.key === "ArrowRight") it.x += step;
+    else if (e.key === "ArrowUp") it.y -= step;
+    else if (e.key === "ArrowDown") it.y += step;
+    else if (e.key === "r" || e.key === "R") { e.preventDefault(); rotateSel(); return; }
+    else if (e.key === "Delete" || e.key === "Backspace") { e.preventDefault(); removeSel(); return; }
+    else moved = false;
+    if (moved) { e.preventDefault(); commit(); }
+  });
+
+  function uniqueName(base) {
+    var names = S.items.map(function (i) { return i.name; });
+    if (names.indexOf(base) < 0) return base;
+    for (var n = 2; ; n++) if (names.indexOf(base + " " + n) < 0) return base + " " + n;
+  }
+  function nextId() { return S.items.reduce(function (m, i) { return Math.max(m, i.id); }, 0) + 1; }
+  function addPiece(src, at) {
+    var it = { id: nextId(), name: uniqueName(src.name), w: src.w, d: src.d, rot: src.rot || 0 };
+    if (src.kind) it.kind = src.kind;
+    if (src.table) it.table = true;
+    if (src.clear) it.clear = src.clear;
+    if (src.h) it.h = src.h;
+    if (src.fixed) it.fixed = true;
+    var r = fp(it);
+    it.x = at ? at.x : (S.room.w - r.w) / 2;
+    it.y = at ? at.y : (S.room.l - r.h) / 2;
+    snapTo(it);
+    if (it.kind === "rug") S.items.unshift(it); else S.items.push(it);
+    sel = it.id;
+    renderPanel(); commit();
+  }
+  function removeSel() {
+    var it = selected(); if (!it) return;
+    S.items = S.items.filter(function (i) { return i !== it; });
+    sel = null;
+    renderPanel(); commit();
+  }
+
+  function renderCatalog() {
+    var el = $("catSelect"), cur = el.value || "0", i = 0;
+    el.innerHTML = CATALOG_GROUPS.map(function (g) {
+      return '<optgroup label="' + esc(g[0]) + '">' + g[1].map(function (c) {
+        return '<option value="' + (i++) + '">' + esc(c.name + " · " + fmt(c.w) + " × " + fmt(c.d)) + "</option>";
+      }).join("") + "</optgroup>";
+    }).join("");
+    el.value = cur;
+    catHint();
+  }
+  function catHint() {
+    var c = CATALOG[+$("catSelect").value]; if (!c) return;
+    var t = "Typical size: " + fmt(c.w) + " wide, " + fmt(c.d) + " deep" + (c.h ? ", " + fmt(c.h) + " high" : "") + ".";
+    if (c.clear) t += " Includes " + fmt(c.clear) + " of clear space on one side" + (c.kind === "chair" ? " to roll back." : " for drawers or doors.");
+    $("catHint").textContent = t + " Change the size to match the real piece after adding it.";
+  }
+  $("catSelect").addEventListener("change", catHint);
+  $("btnAddCat").addEventListener("click", function () { addPiece(CATALOG[+$("catSelect").value]); });
+  renderCatalog();
+
+  $("btnRotate").addEventListener("click", rotateSel);
+  $("btnDel").addEventListener("click", removeSel);
+  $("btnDup").addEventListener("click", function () {
+    var it = selected(); if (!it) return;
+    var copy = clone(it); copy.name = it.name.replace(/ \d+$/, "");
+    addPiece(copy, { x: it.x + 12, y: it.y + 12 });
+  });
+
+  $("selH").addEventListener("change", function () {
+    var it = selected(); if (!it) return;
+    var v = readLen(this, "in", { msg: "selMsg", zero: true }); if (v === null) return;
+    if (v > 0) it.h = v; else delete it.h;
+    this.value = v > 0 ? fmtInput(v) : "";
+    commit();
+  });
+  $("selClear").addEventListener("change", function () {
+    var it = selected(); if (!it) return;
+    var v = readLen(this, "in", { msg: "selMsg", zero: true }); if (v === null) return;
+    if (v > 0) it.clear = v; else delete it.clear;
+    this.value = v > 0 ? fmtInput(v) : "";
+    commit();
+  });
+
+  $("customForm").addEventListener("submit", function (e) {
+    e.preventDefault();
+    $("cMsg").style.color = "";
+    var name = $("cName").value.trim();
+    if (!name) { $("cName").setAttribute("aria-invalid", "true"); showMsg("Give the piece a name.", "cMsg"); $("cName").focus(); return; }
+    $("cName").removeAttribute("aria-invalid");
+    var w = readLen($("cW"), "in", { msg: "cMsg" }); if (w === null) { $("cW").focus(); return; }
+    var d = readLen($("cD"), "in", { msg: "cMsg" }); if (d === null) { $("cD").focus(); return; }
+    var c = readLen($("cClear"), "in", { msg: "cMsg", zero: true }); if (c === null) { $("cClear").focus(); return; }
+    var hh = readLen($("cH"), "in", { msg: "cMsg", zero: true }); if (hh === null) { $("cH").focus(); return; }
+    if (w > S.room.w && w > S.room.l) { $("cW").setAttribute("aria-invalid", "true"); showMsg("That's wider than the room. Check the number.", "cMsg"); return; }
+    var src = { name: name, w: w, d: d };
+    if ($("cRug").checked) src.kind = "rug"; else if (c > 0) src.clear = c;
+    if (hh > 0 && !src.kind) src.h = hh;
+    addPiece(src);
+    ["cName", "cW", "cD", "cH", "cClear"].forEach(function (id) { $(id).value = ""; });
+    $("cRug").checked = false;
+    showMsg("Added " + name + ". It's in the middle of the room, ready to drag.", "cMsg");
+    $("cMsg").style.color = "var(--ok)";
+  });
+  ["cName", "cW", "cD", "cH", "cClear"].forEach(function (id) {
+    $(id).addEventListener("input", function () { $("cMsg").style.color = ""; });
+  });
+
+  function showTab(which) {
+    var add = which === "add";
+    $("tabAdd").setAttribute("aria-selected", add);
+    $("tabRoom").setAttribute("aria-selected", !add);
+    $("paneAdd").hidden = !add;
+    $("paneRoom").hidden = add;
+  }
+  $("tabAdd").addEventListener("click", function () { showTab("add"); });
+  $("tabRoom").addEventListener("click", function () { showTab("room"); });
+
+  $("selName").addEventListener("input", function () {
+    var it = selected(); if (!it) return;
+    it.name = this.value || "Piece";
+    commit();
+  });
+  ["selW", "selD"].forEach(function (id) {
+    $(id).addEventListener("change", function () {
+      var it = selected(); if (!it) return;
+      var v = readLen(this, "in"); if (v === null) return;
+      var r0 = fp(it), cx = r0.x + r0.w / 2, cy = r0.y + r0.h / 2;
+      if (id === "selW") it.w = v; else it.d = v;
+      var r1 = fp(it); it.x = cx - r1.w / 2; it.y = cy - r1.h / 2;
+      this.value = fmtInput(v);
+      commit();
+    });
+  });
+  $("roomName").addEventListener("input", function () { S.name = this.value.trim(); commit(); });
+  ["roomW", "roomL"].forEach(function (id) {
+    $(id).addEventListener("change", function () {
+      var v = readLen(this, "ft"); if (v === null) return;
+      if (v < 24) { this.setAttribute("aria-invalid", "true"); showMsg("That room is under 2 feet. Check the number."); return; }
+      if (id === "roomW") S.room.w = v; else S.room.l = v;
+      S.doors.forEach(clampOpening);
+      S.windows.forEach(clampOpening);
+      this.value = fmtInput(v);
+      renderOpenings(); commit();
+    });
+  });
+  // Units only change how lengths are shown and read; everything is stored in inches,
+  // so switching never alters a room or a saved file.
+  function syncUnitToggles() {
+    var cur = S.unit === "cm" ? "cm" : "ft";
+    Array.prototype.forEach.call(document.querySelectorAll("[data-unit]"), function (b) {
+      b.setAttribute("aria-pressed", b.getAttribute("data-unit") === cur ? "true" : "false");
+    });
+  }
+  function setUnit(u) {
+    var old = S.unit === "cm" ? "cm" : "ft";
+    if (u === old) return;
+    // carry anything typed but not yet applied over into the new units
+    function convert(el, plain) {
+      var t = el.value.trim(); if (!t) return null;
+      var v = parseLen(t, old === "cm" ? "cm" : plain);
+      return isFinite(v) && v >= 0 ? v : null;
+    }
+    var typed = ["cW", "cD", "cH", "cClear"].map(function (id) { return convert($(id), "in"); });
+    var wst = wiz && STEPS[wiz.step], wi = $("wizInput"), wv = null;
+    if (wst && wst.type === "len" && wi) wv = convert(wi, wst.plain);
+    S.unit = u;
+    ["cW", "cD", "cH", "cClear"].forEach(function (id, i) { if (typed[i] !== null) $(id).value = fmtInput(typed[i]); });
+    showMsg(""); renderPanel(); renderCatalog(); commit();
+    if (wst) {
+      wiz.prefill = wv !== null ? fmtInput(wv) : wi ? wi.value : null;
+      wiz.focus = false;
+      wizRender();
+    }
+    syncUnitToggles();
+  }
+  document.addEventListener("click", function (e) {
+    var b = e.target.closest && e.target.closest("[data-unit]");
+    if (b) setUnit(b.getAttribute("data-unit"));
+  });
+
+  $("openings").addEventListener("change", function (e) {
+    var el = e.target, f = el.getAttribute("data-f"); if (!f) return;
+    var parts = f.split("."), op = (parts[0] === "door" ? S.doors : S.windows)[+parts[1]], key = parts[parts.length - 1];
+    if (!op) return;
+    if (key === "wall") { op.wall = el.value; clampOpening(op); renderOpenings(); commit(); return; }
+    if (key === "hinge" || key === "swing") { op[key] = el.value; commit(); return; }
+    if (parts[2] === "trim") {
+      if (!op.trim) return;
+      var tv = readLen(el, "in", { zero: key !== "depth" }); if (tv === null) return;
+      op.trim[key] = tv;
+      renderOpenings(); commit(); return;
+    }
+    if (parts[2] === "sill") {
+      if (!op.sill) return;
+      if (key === "height") {
+        var hv = readLen(el, "in", { zero: true }); if (hv === null) return;
+        if (hv > 0) op.sill.height = hv; else delete op.sill.height;
+      } else {
+        var sv = readLen(el, "in"); if (sv === null) return;
+        op.sill[key] = key === "len" ? Math.min(sv, wallLen(op.wall)) : sv;
+      }
+      renderOpenings(); commit(); return;
+    }
+    var v = readLen(el, "in", { zero: key === "offset" }); if (v === null) return;
+    op[key] = v; clampOpening(op);
+    el.value = fmtInput(op[key]);
+    renderOpenings(); commit();
+  });
+  $("openings").addEventListener("click", function (e) {
+    var b = e.target.closest("[data-rmwin]"), bd = e.target.closest("[data-rmdoor]");
+    var add = e.target.closest("[data-addsill]"), rm = e.target.closest("[data-rmsill]");
+    if (add) {
+      var wn = S.windows[+add.getAttribute("data-addsill")];
+      wn.sill = { len: Math.min(wn.width + 4, wallLen(wn.wall)), depth: 3 };
+      renderOpenings(); commit();
+      var first = $("win" + add.getAttribute("data-addsill") + "-sill-len");
+      if (first) { first.focus(); first.select(); }
+      return;
+    }
+    if (rm) { delete S.windows[+rm.getAttribute("data-rmsill")].sill; renderOpenings(); commit(); return; }
+    var addT = e.target.closest("[data-addtrim]"), rmT = e.target.closest("[data-rmtrim]");
+    if (addT) {
+      var di = addT.getAttribute("data-addtrim");
+      S.doors[+di].trim = { a: 3.5, b: 3.5, depth: 1 };
+      renderOpenings(); commit();
+      var ta = $("door" + di + "-trim-a");
+      if (ta) { ta.focus(); ta.select(); }
+      return;
+    }
+    if (rmT) { delete S.doors[+rmT.getAttribute("data-rmtrim")].trim; renderOpenings(); commit(); return; }
+    if (bd) S.doors.splice(+bd.getAttribute("data-rmdoor"), 1);
+    else if (b) S.windows.splice(+b.getAttribute("data-rmwin"), 1);
+    else return;
+    selOpening = null;
+    renderOpenings(); commit();
+  });
+  $("btnAddDoor").addEventListener("click", function () {
+    var op = { wall: "N", offset: 12, width: 30, hinge: "start", swing: "in" }; clampOpening(op);
+    S.doors.push(op);
+    renderOpenings(); commit();
+  });
+  $("selFixed").addEventListener("change", function () {
+    var it = selected(); if (!it) return;
+    if (this.checked) it.fixed = true; else delete it.fixed;
+    renderPanel(); commit();
+  });
+  $("btnAddWin").addEventListener("click", function () {
+    var op = { wall: "W", offset: 24, width: 36 }; clampOpening(op);
+    S.windows.push(op);
+    renderOpenings(); commit();
+  });
+  $("btnReset").addEventListener("click", function () {
+    showMsg("");
+    addRoomAndOpen(targetProject(), clone(SAMPLE));
+  });
+
+  // ---------- keeping a copy outside the browser ----------
+  var dl = null; // the viewer's file-save capability, when this view offers it
+  try {
+    if (window.claude && typeof window.claude.use === "function") {
+      window.claude.use("downloads").then(function (d) { dl = d; $("btnExport").hidden = !d && !linkSave; }, function () {});
+    }
+  } catch (e) {}
+  // Outside Claude (the file on her Mac, or the website) an ordinary download link saves the file.
+  var linkSave = false;
+  try { linkSave = window.top === window && !window.claude; } catch (e) {}
+  if (linkSave) $("btnExport").hidden = false;
+  function exportText(room) { return JSON.stringify({ app: "Room Fit", version: 1, savedAt: new Date().toISOString(), room: room || S }, null, 2); }
+  function keepMsg(t, isErr) { var m = $("keepMsg"); m.textContent = t; m.hidden = !t; m.style.color = isErr ? "var(--bad)" : "var(--ok)"; }
+  function summary(s) {
+    var nf = s.items.filter(function (i) { return !i.fixed; }).length;
+    return (s.name || "an untitled room") + ", " + fmt(s.room.w) + " × " + fmt(s.room.l) + ", " +
+      s.doors.length + (s.doors.length === 1 ? " door, " : " doors, ") +
+      s.windows.length + (s.windows.length === 1 ? " window, " : " windows, ") +
+      nf + (nf === 1 ? " piece of furniture" : " pieces of furniture");
+  }
+  $("btnExport").addEventListener("click", function () {
+    var base = (S.name || "room").replace(/[^A-Za-z0-9 _-]+/g, "").trim().replace(/\s+/g, "-").toLowerCase() || "room";
+    if (!dl && linkSave) {
+      var a = document.createElement("a");
+      a.href = URL.createObjectURL(new Blob([exportText()], { type: "application/json" }));
+      a.download = base + ".roomfit.json";
+      document.body.appendChild(a); a.click();
+      setTimeout(function () { URL.revokeObjectURL(a.href); a.remove(); }, 2000);
+      keepMsg("Saved to the Downloads folder. Move it somewhere safe, such as iCloud Drive, or email it to yourself.");
+      return;
+    }
+    if (!dl) return;
+    dl.save({ filename: base + ".roomfit.json", data: exportText() }).then(function () {
+      keepMsg("Saved to the Downloads folder. Move it somewhere safe, such as iCloud Drive, or email it to yourself.");
+    }, function (err) {
+      var c = err && err.code;
+      if (c === "declined") return;
+      if (c === "rate_limited") { keepMsg("A save prompt is already open.", true); return; }
+      $("btnExport").hidden = true;
+      keepMsg("Saving a file isn't available here. Use Copy as text instead.", true);
+    });
+  });
+  $("btnCopy").addEventListener("click", function () {
+    var t = exportText(), box = $("copyBox");
+    function fallback() {
+      box.value = t; box.hidden = false; box.focus(); box.select();
+      keepMsg("The text below is selected. Copy it (⌘C or Ctrl+C), then paste it into an email or a note.");
+    }
+    try {
+      navigator.clipboard.writeText(t).then(function () {
+        box.hidden = true;
+        keepMsg("Copied. Paste it into an email or a note to keep it. “Open a saved room” reads it back.");
+      }, fallback);
+    } catch (e) { fallback(); }
+  });
+
+  var pendingRoom = null;
+  function setPending(text) {
+    var s = null;
+    try { s = normalize(JSON.parse(text)); } catch (e) {}
+    pendingRoom = s;
+    $("btnImportGo").disabled = !s;
+    $("importSummary").textContent = s
+      ? "Found " + summary(s) + ". It will be added to " + targetProjectName() + " and opened."
+      : text.trim() ? "That doesn't look like a saved room. Use a file saved from this page, or all of the copied text."
+      : "The room is added to " + targetProjectName() + " as a new room. Nothing on the plan now is replaced.";
+  }
+  function closeImport() { $("importBox").hidden = true; $("importText").value = ""; $("importFile").value = ""; pendingRoom = null; }
+  $("btnImport").addEventListener("click", function () {
+    var box = $("importBox");
+    if (!box.hidden) { closeImport(); return; }
+    box.hidden = false; $("copyBox").hidden = true; keepMsg("");
+    setPending("");
+  });
+  $("btnChooseFile").addEventListener("click", function () { $("importFile").click(); });
+  $("importFile").addEventListener("change", function () {
+    var f = this.files && this.files[0]; if (!f) return;
+    var r = new FileReader();
+    r.onload = function () { $("importText").value = ""; setPending(String(r.result || "")); };
+    r.onerror = function () { $("importSummary").textContent = "Couldn't read that file. Try choosing it again."; };
+    r.readAsText(f);
+  });
+  $("importText").addEventListener("input", function () { setPending(this.value); });
+  $("btnImportCancel").addEventListener("click", closeImport);
+  $("btnImportGo").addEventListener("click", function () {
+    if (!pendingRoom) return;
+    var room = pendingRoom, name = room.name || "the saved room";
+    closeImport();
+    addRoomAndOpen(targetProject(), room).then(function () { keepMsg("Added " + name + " to " + projectName(cur && cur.p) + " and opened it."); });
+  });
+
+  // ---------- workspace: projects that hold rooms ----------
+  // Two homes for rooms, with one set of operations:
+  //  - "folder": a folder on this computer that the viewer picks. Each project is a sub-folder
+  //    and each room is a .json file in the format "Save room to a file" writes, so rooms are
+  //    ordinary files she owns. Room files at the top of the folder show as "Not in a project".
+  //  - "browser": projects kept in this browser's storage, for places that can't open folders
+  //    (inside the Claude artifact, Safari, Firefox).
+  // The room on the plan is also cached under KEY on every change, so a reload or a lost folder
+  // permission never loses edits; they are written to the file when the folder is reconnected.
+  var WS_KEY = "roomfit.ws.v1", CUR_KEY = KEY + ".cur", UI_KEY = "roomfit.ui.v1", LOOSE = "";
+  var ws = { mode: "browser", folderCapable: false, root: null, perm: "none", tree: [], copyOffer: 0 };
+  var cur = null;            // { p: project id, r: room id } of the room on the plan, or null if it has no home yet
+  var pendingWrite = null, writeTimer = null, writeChain = Promise.resolve();
+  var ui = (function () { try { return JSON.parse(localStorage.getItem(UI_KEY) || "{}") || {}; } catch (e) { return {}; } })();
+  function saveUi() { try { localStorage.setItem(UI_KEY, JSON.stringify(ui)); } catch (e) {} }
+  function uid() { return Date.now().toString(36) + Math.random().toString(36).slice(2, 7); }
+
+  function readCur() { try { return JSON.parse(localStorage.getItem(CUR_KEY) || "null"); } catch (e) { return null; } }
+  function writeCur(dirty) {
+    try { localStorage.setItem(CUR_KEY, JSON.stringify(cur ? { mode: ws.mode, p: cur.p, r: cur.r, dirty: !!dirty } : { mode: ws.mode, dirty: !!dirty })); } catch (e) {}
+  }
+  function isDirty() { var m = readCur(); return !!(m && m.dirty); }
+
+  function canUseFolders() {
+    if (typeof window.showDirectoryPicker !== "function") return false;
+    try { if (window.top !== window) return false; } catch (e) { return false; } // a framed page can't open pickers
+    return true;
+  }
+
+  // IndexedDB keeps the folder handle between visits
+  function idb(mode, fn) {
+    return new Promise(function (ok, no) {
+      var q = indexedDB.open("roomfit", 1);
+      q.onupgradeneeded = function () { q.result.createObjectStore("handles"); };
+      q.onerror = function () { no(q.error); };
+      q.onsuccess = function () {
+        var t = q.result.transaction("handles", mode), st = t.objectStore("handles"), r = fn(st);
+        t.oncomplete = function () { ok(r && "result" in r ? r.result : undefined); };
+        t.onerror = function () { no(t.error); };
+      };
+    });
+  }
+  function idbGet(k) { return idb("readonly", function (st) { return st.get(k); }); }
+  function idbSet(k, v) { return idb("readwrite", function (st) { st.put(v, k); }); }
+  function idbDel(k) { return idb("readwrite", function (st) { st.delete(k); }); }
+
+  // ----- browser storage -----
+  function bsLoad() { try { var d = JSON.parse(localStorage.getItem(WS_KEY) || "null"); if (d && Array.isArray(d.projects)) return d; } catch (e) {} return null; }
+  function bsSave(d) { try { localStorage.setItem(WS_KEY, JSON.stringify(d)); } catch (e) { setStatus("This browser's storage is full. Save rooms to files to keep them.", true); } }
+  function bsTree(d) {
+    return d.projects.map(function (pr) {
+      return { id: pr.id, name: pr.name, rooms: pr.rooms.map(function (rm) { return { id: rm.id, name: rm.room.name || "Untitled room", w: rm.room.room.w, l: rm.room.room.l }; }) };
+    });
+  }
+  function bsFind(d, p, r) {
+    var pr = d.projects.filter(function (x) { return x.id === p; })[0];
+    return { pr: pr, rm: pr && pr.rooms.filter(function (x) { return x.id === r; })[0] };
+  }
+
+  // ----- folder storage -----
+  function cleanName(n) { return String(n || "").replace(/[\/\\:*?"<>|]+/g, " ").replace(/\s+/g, " ").trim().slice(0, 80); }
+  async function fsDir(p) { return p ? ws.root.getDirectoryHandle(p) : ws.root; }
+  async function fsReadFile(fh) {
+    try { var s = normalize(JSON.parse(await (await fh.getFile()).text())); return s; } catch (e) { return null; }
+  }
+  async function fsScan(dir) {
+    var rooms = [];
+    for await (var entry of dir.values()) {
+      if (entry.kind !== "file" || !/\.json$/i.test(entry.name)) continue;
+      var room = await fsReadFile(entry);
+      if (room) rooms.push({ id: entry.name, name: room.name || entry.name.replace(/(\.roomfit)?\.json$/i, ""), w: room.room.w, l: room.room.l });
+    }
+    rooms.sort(function (a, b) { return a.name.localeCompare(b.name); });
+    return rooms;
+  }
+  async function fsRefresh() {
+    var projects = [];
+    for await (var entry of ws.root.values()) {
+      if (entry.kind === "directory" && entry.name.charAt(0) !== ".") projects.push({ id: entry.name, name: entry.name, rooms: await fsScan(entry) });
+    }
+    projects.sort(function (a, b) { return a.name.localeCompare(b.name); });
+    var loose = await fsScan(ws.root);
+    if (loose.length) projects.push({ id: LOOSE, name: "Not in a project", rooms: loose });
+    ws.tree = projects;
+  }
+  async function fsUniqueFile(dir, base) {
+    for (var n = 1; n < 500; n++) {
+      var name = base + (n > 1 ? " " + n : "") + ".roomfit.json";
+      try { await dir.getFileHandle(name); } catch (e) { if (e.name === "NotFoundError") return name; throw e; }
+    }
+    throw new Error("Too many rooms with that name");
+  }
+  async function fsWrite(p, r, room) {
+    var fh = await (await fsDir(p)).getFileHandle(r, { create: true });
+    var w = await fh.createWritable();
+    await w.write(exportText(room));
+    await w.close();
+  }
+
+  // ----- one set of operations over both homes -----
+  async function readRoom(p, r) {
+    if (ws.mode === "browser") { var f = bsFind(bsLoad() || { projects: [] }, p, r); return f.rm ? normalize(clone(f.rm.room)) : null; }
+    try { return await fsReadFile(await (await fsDir(p)).getFileHandle(r)); } catch (e) { return null; }
+  }
+  async function createProject(name) {
+    name = cleanName(name);
+    if (ws.mode === "browser") {
+      var d = bsLoad(), id = uid(); d.projects.push({ id: id, name: name, rooms: [] }); bsSave(d); ws.tree = bsTree(d); return id;
+    }
+    await ws.root.getDirectoryHandle(name, { create: true });
+    await fsRefresh(); return name;
+  }
+  async function createRoom(p, room) {
+    if (ws.mode === "browser") {
+      var d = bsLoad(), f = bsFind(d, p, null), id = uid();
+      if (!f.pr) throw new Error("That project no longer exists");
+      f.pr.rooms.push({ id: id, room: clone(room) }); bsSave(d); ws.tree = bsTree(d); return id;
+    }
+    var dir = await fsDir(p), name = await fsUniqueFile(dir, cleanName(room.name) || "Room");
+    await writeQueued(p, name, room);
+    await fsRefresh(); return name;
+  }
+  function writeQueued(p, r, room) {
+    writeChain = writeChain.then(function () { return fsWrite(p, r, room); }, function () { return fsWrite(p, r, room); });
+    return writeChain;
+  }
+
+  // Autosave. The target and a copy of the room are captured when the change happens, so a save
+  // that runs after switching rooms still lands in the right file.
+  function scheduleWrite() {
+    if (wiz || !cur) return;
+    if (ws.mode === "browser") {
+      var d = bsLoad(), f = d && bsFind(d, cur.p, cur.r);
+      if (f && f.rm) { f.rm.room = clone(S); bsSave(d); refreshEntry(); }
+      return;
+    }
+    writeCur(true);
+    pendingWrite = { p: cur.p, r: cur.r, room: clone(S) };
+    clearTimeout(writeTimer);
+    writeTimer = setTimeout(flushWrite, 600);
+    refreshEntry();
+  }
+  function flushWrite() {
+    clearTimeout(writeTimer); writeTimer = null;
+    var job = pendingWrite; pendingWrite = null;
+    if (!job) return writeChain;
+    if (ws.perm !== "granted") { setStatus("Changes are kept in this browser until the folder is reconnected.", true); return writeChain; }
+    setStatus("Saving…");
+    return writeQueued(job.p, job.r, job.room).then(function () {
+      if (!pendingWrite && cur && cur.p === job.p && cur.r === job.r) writeCur(false);
+      setStatus("Saved to " + (job.p ? job.p + " / " : "") + job.r);
+    }, function (e) {
+      setStatus("Couldn't save to the folder (" + (e && e.message || e) + "). Your changes are kept in this browser.", true);
+    });
+  }
+  // keep the sidebar's name and size for the open room current without a full rescan
+  function refreshEntry() {
+    if (!cur) return;
+    ws.tree.forEach(function (pr) { if (pr.id === cur.p) pr.rooms.forEach(function (rm) {
+      if (rm.id === cur.r && (rm.name !== (S.name || "Untitled room") || rm.w !== S.room.w || rm.l !== S.room.l)) {
+        rm.name = S.name || "Untitled room"; rm.w = S.room.w; rm.l = S.room.l; renderSidebar();
+      }
+    }); });
+  }
+
+  function projectName(p) {
+    var pr = ws.tree.filter(function (x) { return x.id === p; })[0];
+    return pr ? pr.name : p === LOOSE ? "Not in a project" : "a project";
+  }
+  function targetProject() {
+    if (cur && ws.tree.some(function (x) { return x.id === cur.p; })) return cur.p;
+    return ws.tree.length ? ws.tree[0].id : LOOSE;
+  }
+  function targetProjectName() { return projectName(targetProject()); }
+
+  async function openRoom(p, r) {
+    if (wiz || (cur && cur.p === p && cur.r === r)) return;
+    await flushWrite();
+    var room = await readRoom(p, r);
+    if (!room) { setStatus("Couldn't open that room. The file may have been moved or isn't a room file.", true); return; }
+    S = room; sel = null; selOpening = null; cur = { p: p, r: r };
+    writeCur(false); save();
+    renderPanel(); renderCatalog(); renderPlan(); renderSidebar();
+    setStatus(ws.mode === "folder" ? "Opened " + (p ? p + " / " : "") + r : "");
+  }
+  async function addRoomAndOpen(p, room) {
+    await flushWrite();
+    try {
+      var id = await createRoom(p, room);
+      cur = null;
+      await openRoom(p, id);
+    } catch (e) { setStatus("Couldn't add the room (" + (e && e.message || e) + ").", true); }
+  }
+
+  // ----- connecting a folder -----
+  async function pickFolder() {
+    var h;
+    try { h = await window.showDirectoryPicker({ id: "roomfit", mode: "readwrite" }); }
+    catch (e) {
+      if (e && e.name === "AbortError") return;
+      ws.folderCapable = false; renderSidebar();
+      setStatus("This browser won't let the page use a folder here, so projects stay in this browser.", true);
+      return;
+    }
+    var fromBrowser = ws.mode === "browser" ? bsLoad() : null;
+    var oldCur = cur;
+    ws.root = h; ws.mode = "folder"; ws.perm = "granted";
+    try { await idbSet("root", h); } catch (e) {}
+    await fsRefresh();
+    ws.copyOffer = fromBrowser ? fromBrowser.projects.reduce(function (n, pr) { return n + pr.rooms.length; }, 0) : 0;
+    ws.copyFrom = fromBrowser; ws.copyCur = oldCur;
+    cur = null; writeCur(false);
+    renderSidebar();
+    setStatus("Using the folder " + h.name + ".");
+  }
+  async function copyBrowserRooms() {
+    var d = ws.copyFrom; if (!d) return;
+    var mapped = null;
+    setStatus("Copying rooms into the folder…");
+    try {
+      for (var i = 0; i < d.projects.length; i++) {
+        var pr = d.projects[i], name = cleanName(pr.name) || "My rooms";
+        await ws.root.getDirectoryHandle(name, { create: true });
+        for (var j = 0; j < pr.rooms.length; j++) {
+          var dir = await fsDir(name), file = await fsUniqueFile(dir, cleanName(pr.rooms[j].room.name) || "Room");
+          await writeQueued(name, file, normalize(clone(pr.rooms[j].room)));
+          if (ws.copyCur && ws.copyCur.p === pr.id && ws.copyCur.r === pr.rooms[j].id) mapped = { p: name, r: file };
+        }
+      }
+      await fsRefresh();
+      ws.copyOffer = 0; ws.copyFrom = null;
+      if (mapped) { cur = mapped; writeCur(false); scheduleWrite(); }
+      renderSidebar();
+      setStatus("Copied. The rooms are now files in " + ws.root.name + ".");
+    } catch (e) { setStatus("Copying stopped (" + (e && e.message || e) + "). Nothing in this browser was removed.", true); }
+  }
+  async function reconnect() {
+    try { ws.perm = await ws.root.requestPermission({ mode: "readwrite" }); } catch (e) { ws.perm = "denied"; }
+    if (ws.perm !== "granted") { renderSidebar(); setStatus("The folder wasn't reconnected. Changes stay in this browser for now.", true); return; }
+    await fsRefresh();
+    await afterConnect();
+  }
+  // With access to the folder again: write edits made while it was disconnected, otherwise reload
+  // the room from its file in case it changed elsewhere (another computer, via iCloud).
+  async function afterConnect() {
+    var exists = cur && ws.tree.some(function (pr) { return pr.id === cur.p && pr.rooms.some(function (rm) { return rm.id === cur.r; }); });
+    if (cur && !exists) cur = null;
+    if (cur && isDirty()) {
+      pendingWrite = { p: cur.p, r: cur.r, room: clone(S) };
+      await flushWrite();
+    } else if (cur) {
+      var room = await readRoom(cur.p, cur.r);
+      if (room) { S = room; save(); renderPanel(); renderCatalog(); renderPlan(); }
+    }
+    writeCur(false);
+    renderSidebar();
+  }
+  async function useBrowserInstead() {
+    await flushWrite();
+    try { await idbDel("root"); } catch (e) {}
+    ws.mode = "browser"; ws.root = null; ws.perm = "none";
+    var d = bsLoad() || { projects: [] };
+    if (!d.projects.length) d.projects.push({ id: uid(), name: "My rooms", rooms: [] });
+    var id = uid(); d.projects[0].rooms.push({ id: id, room: clone(S) }); bsSave(d);
+    ws.tree = bsTree(d); cur = { p: d.projects[0].id, r: id }; writeCur(false);
+    renderSidebar();
+    setStatus("Projects are now kept in this browser. The room on the plan was added to " + d.projects[0].name + ".");
+  }
+
+  // ----- sidebar -----
+  var confirmDelete = null, saveHere = false;
+  function setStatus(t, warn) { var el = $("sideStatus"); el.textContent = t || ""; el.className = "side-status" + (warn ? " warn" : ""); }
+  function renderSidebar() {
+    var h = [], where = $("sideWhere");
+    if (ws.mode === "folder") {
+      if (ws.perm === "granted") {
+        h.push("<span>Projects are files in the folder <b>" + esc(ws.root.name) + "</b>. Changes save automatically.</span>");
+        h.push('<div class="row"><button type="button" data-ws="pick">Use a different folder</button><button type="button" data-ws="browser">Keep projects in this browser instead</button></div>');
+        if (ws.copyOffer) h.push('<div class="row"><button type="button" class="primary" data-ws="copy">Copy the ' + ws.copyOffer + (ws.copyOffer === 1 ? " room" : " rooms") + " kept in this browser into this folder</button></div>");
+      } else {
+        h.push("<span>Projects are files in the folder <b>" + esc(ws.root.name) + "</b>. The browser needs your permission again to use it.</span>");
+        h.push('<div class="row"><button type="button" class="primary" data-ws="reconnect">Reconnect the folder</button></div>');
+        h.push("<span>Changes you make before reconnecting are kept in this browser and saved to the file when you reconnect.</span>");
+      }
+    } else {
+      h.push("<span>Projects are kept in this browser. Use “Save room to a file” to keep a copy anywhere else.</span>");
+      if (ws.folderCapable) h.push('<div class="row"><button type="button" class="primary" data-ws="pick">Use a folder on this computer</button></div><span>Recommended: each room becomes a file you own, for example in iCloud Drive.</span>');
+    }
+    where.innerHTML = h.join("");
+
+    var t = [], collapsed = ui.collapsed || {};
+    if (ws.mode === "folder" && ws.perm !== "granted") {
+      t.push('<p class="empty-proj">The project list appears once the folder is reconnected.</p>');
+    }
+    if (!cur && !(ws.mode === "folder" && ws.perm !== "granted")) {
+      t.push('<div class="inline-form"><span class="hint">The room on the plan, <b>' + esc(S.name || "Untitled room") + "</b>, isn't saved in a project yet.</span>" +
+        (ws.tree.filter(function (x) { return x.id !== LOOSE; }).length
+          ? '<label>Project<select id="saveHereSel">' + ws.tree.filter(function (x) { return x.id !== LOOSE; }).map(function (pr) { return '<option value="' + esc(pr.id) + '">' + esc(pr.name) + "</option>"; }).join("") + "</select></label>" +
+            '<div class="row"><button type="button" class="primary" data-ws="savehere">Save it to this project</button></div>'
+          : '<span class="hint">Create a project first, then save it there.</span>') + "</div>");
+    }
+    ws.tree.forEach(function (pr) {
+      var open = !collapsed[pr.id];
+      t.push('<div class="proj"><div class="proj-row"><button type="button" class="proj-name" data-toggle="' + esc(pr.id) + '" aria-expanded="' + open + '">' + (open ? "▾ " : "▸ ") + esc(pr.name) + "</button>" +
+        (pr.id === LOOSE ? "" : '<button type="button" class="small" data-newroom="' + esc(pr.id) + '" title="Start a new room in ' + esc(pr.name) + '">New room</button>') + "</div>");
+      if (open) {
+        t.push('<ul class="rooms">');
+        if (!pr.rooms.length) t.push('<li class="empty-proj">No rooms yet</li>');
+        pr.rooms.forEach(function (rm) {
+          var active = cur && cur.p === pr.id && cur.r === rm.id;
+          t.push('<li><button type="button" class="room-link' + (active ? " active" : "") + '" data-open="' + esc(pr.id) + "\u0001" + esc(rm.id) + '"' + (active ? ' aria-current="true"' : "") + ">" +
+            esc(rm.name) + "<small>" + esc(fmt(rm.w) + " × " + fmt(rm.l)) + "</small></button>");
+          if (active) {
+            t.push('<div class="room-tools"><button type="button" data-ws="dup">Duplicate as another option</button>' + (ws.mode === "browser" ? '<button type="button" data-ws="del">Delete</button>' : "") + "</div>");
+            if (confirmDelete) t.push('<div class="confirm">Delete ' + esc(rm.name) + "? This can't be undone. Save it to a file first if you might want it again.<div class=\"row\"><button type=\"button\" class=\"primary\" data-ws=\"delyes\">Delete room</button><button type=\"button\" data-ws=\"delno\">Keep it</button></div></div>");
+          }
+          t.push("</li>");
+        });
+        t.push("</ul>");
+      }
+      t.push("</div>");
+    });
+    if (ws.mode === "folder" && ws.perm === "granted" && !ws.tree.length) t.push('<p class="empty-proj">This folder has no projects yet. Create one to start.</p>');
+    $("tree").innerHTML = t.join("");
+
+    var curProj = cur ? projectName(cur.p) : "";
+    $("eyebrow").textContent = (cur && cur.p !== LOOSE ? curProj + " · " : "") + "Room Fit";
+    $("sideCurrent").textContent = cur ? curProj : "";
+    $("keepHint").textContent = ws.mode === "folder" && ws.perm === "granted"
+      ? "This room is already a file in your folder. Save another copy to send it to someone or keep a backup."
+      : "This room is kept only in this browser. Save a copy to keep it safe or to open it somewhere else.";
+    $("sidebar").classList.toggle("locked", !!wiz);
+  }
+
+  $("sidebar").addEventListener("click", function (e) {
+    var b = e.target.closest("button"); if (!b || wiz) return;
+    var act = b.getAttribute("data-ws");
+    if (b.hasAttribute("data-toggle")) {
+      var id = b.getAttribute("data-toggle"); ui.collapsed = ui.collapsed || {};
+      ui.collapsed[id] = !ui.collapsed[id]; saveUi(); renderSidebar(); return;
+    }
+    if (b.hasAttribute("data-open")) { var pr = b.getAttribute("data-open").split("\u0001"); confirmDelete = null; openRoom(pr[0], pr[1]); return; }
+    if (b.hasAttribute("data-newroom")) { startWizard(b.getAttribute("data-newroom")); return; }
+    if (act === "pick") pickFolder();
+    else if (act === "copy") copyBrowserRooms();
+    else if (act === "reconnect") reconnect();
+    else if (act === "browser") useBrowserInstead();
+    else if (act === "savehere") addRoomAndOpen($("saveHereSel").value, clone(S));
+    else if (act === "dup") {
+      var copy = clone(S); copy.name = (S.name || "Room") + ", option " + (1 + ws.tree.filter(function (x) { return x.id === cur.p; })[0].rooms.length);
+      addRoomAndOpen(cur.p, copy);
+    }
+    else if (act === "del") { confirmDelete = true; renderSidebar(); }
+    else if (act === "delno") { confirmDelete = null; renderSidebar(); }
+    else if (act === "delyes") {
+      var d = bsLoad(), f = bsFind(d, cur.p, cur.r);
+      f.pr.rooms = f.pr.rooms.filter(function (x) { return x.id !== cur.r; }); bsSave(d); ws.tree = bsTree(d);
+      confirmDelete = null;
+      var next = null;
+      ws.tree.some(function (x) { if (x.rooms.length) { next = { p: x.id, r: x.rooms[0].id }; return true; } });
+      cur = null;
+      if (next) openRoom(next.p, next.r); else { writeCur(false); renderSidebar(); }
+    }
+  });
+  $("btnNewProject").addEventListener("click", function () {
+    if (ws.mode === "folder" && ws.perm !== "granted") { setStatus("Reconnect the folder first.", true); return; }
+    $("newProjectForm").hidden = false; $("newProjectName").value = ""; $("newProjectName").focus();
+  });
+  $("btnNewProjectCancel").addEventListener("click", function () { $("newProjectForm").hidden = true; });
+  $("newProjectForm").addEventListener("submit", function (e) {
+    e.preventDefault();
+    var name = cleanName($("newProjectName").value);
+    if (!name) { $("newProjectName").setAttribute("aria-invalid", "true"); return; }
+    $("newProjectName").removeAttribute("aria-invalid");
+    createProject(name).then(function () { $("newProjectForm").hidden = true; renderSidebar(); setStatus("Created " + name + ". Add a room with New room."); },
+      function (err) { setStatus("Couldn't create the project (" + (err && err.message || err) + ").", true); });
+  });
+
+  async function initWorkspace() {
+    ws.folderCapable = canUseFolders();
+    var meta = readCur();
+    if (ws.folderCapable) {
+      var h = null;
+      try { h = await idbGet("root"); } catch (e) {}
+      if (h) {
+        ws.mode = "folder"; ws.root = h;
+        try { ws.perm = await h.queryPermission({ mode: "readwrite" }); } catch (e) { ws.perm = "prompt"; }
+        cur = meta && meta.mode === "folder" && meta.r ? { p: meta.p || LOOSE, r: meta.r } : null;
+        if (ws.perm === "granted") { await fsRefresh(); await afterConnect(); }
+        renderSidebar();
+        return;
+      }
+    }
+    ws.mode = "browser";
+    var d = bsLoad();
+    if (!d) {
+      // first visit with projects: the room already on the plan becomes the first room of "My rooms"
+      d = { projects: [{ id: uid(), name: "My rooms", rooms: [{ id: uid(), room: clone(S) }] }] };
+      bsSave(d);
+      cur = { p: d.projects[0].id, r: d.projects[0].rooms[0].id };
+    } else {
+      var f = meta && meta.mode === "browser" ? bsFind(d, meta.p, meta.r) : {};
+      if (f.rm) cur = { p: meta.p, r: meta.r };
+      else {
+        cur = null;
+        d.projects.some(function (x) { if (x.rooms.length) { cur = { p: x.id, r: x.rooms[0].id }; return true; } });
+      }
+      if (cur) { var room = normalize(clone(bsFind(d, cur.p, cur.r).rm.room)); if (room) { S = room; save(); } }
+    }
+    ws.tree = bsTree(d);
+    writeCur(false);
+    renderPanel(); renderCatalog(); renderPlan(); renderSidebar();
+  }
+
+  // ---------- new-room wizard ----------
+  // One question at a time. Each answer is applied to the plan straight away so the room
+  // takes shape beside the questions. Back restores the room as it was before that answer.
+  var SECTIONS = ["Room", "Doors", "Windows", "Fixed features"];
+  var WALLS = [["N", "Straight ahead"], ["W", "On your left"], ["E", "On your right"], ["S", "Behind you, the doorway wall"]];
+  // looking at a door from inside the room, is the left-hand end the start of the wall (its left or top end)?
+  var LEFT_IS_START = { N: true, E: true, S: false, W: false };
+
+  function ex(ftText, cmText) { return S.unit === "cm" ? cmText : ftText; }
+  function curDoor() { return S.doors[wiz.ctx.di]; }
+  function curWin() { return S.windows[wiz.ctx.wi]; }
+  function curFixed() { return S.items.find(function (i) { return i.id === wiz.ctx.fid; }); }
+  function offsetQuestion(wall, what) {
+    if (wall === "N") return "How far is the " + what + " from the left-hand corner of that wall?";
+    if (wall === "S") return "How far is the " + what + " from the corner on your left?";
+    return "How far is the " + what + " from the corner nearest the doorway wall?";
+  }
+  var OFFSET_HELP = "Measure along the wall from the corner to the nearest edge of the " +
+    "opening. Measure from the frame, not the trim or curtains. Enter 0 if it starts right in the corner.";
+  // the user measures from the corner nearest them; the plan measures side walls from the top
+  function alongFromNear(wall, near, width) { return wall === "W" || wall === "E" ? S.room.l - near - width : near; }
+  function fitsWall(wall, width) { return width <= wallLen(wall) + 0.01 ? null : "That's longer than the wall (" + fmt(wallLen(wall)) + "). Check the number."; }
+  function fitsAlong(wall, near, width) { return near + width <= wallLen(wall) + 0.01 ? null : "That would run past the end of the wall. The wall is " + fmt(wallLen(wall)) + " and this is " + fmt(width) + " wide."; }
+  function placeFixed(it, wall, u) {
+    it.rot = wall === "N" || wall === "S" ? 0 : 90;
+    if (u == null) u = (wallLen(wall) - it.w) / 2;
+    u = Math.max(0, Math.min(u, wallLen(wall) - it.w));
+    var r = wallRect(wall, u, u + it.w, 0, it.d);
+    it.x = r.x; it.y = r.y;
+  }
+  function yesNo(yes, no) { return function () { return [["yes", yes], ["no", no]]; }; }
+
+  var STEPS = {
+    intro: {
+      section: 0, type: "info", q: "Start a new room",
+      lead: function () { return "A few short questions set up the walls, doors and windows. Furniture comes after. Have the measurements handy. A sketch with the numbers on it is perfect."; },
+      more: function () { return "The room open now stays as it is. The new room is added to " + projectName(wiz.target) + " when you finish. You can cancel at any point before then."; },
+      nextLabel: "Start", next: "name",
+      apply: function () { S = { name: "", unit: "ft", room: { w: 144, l: 120 }, doors: [], windows: [], items: [] }; sel = null; }
+    },
+    name: {
+      section: 0, type: "text", optional: true, q: "What's this room called?", placeholder: "Main bedroom",
+      more: "It's only a label, so you can tell rooms apart. You can leave it blank.",
+      example: "Main bedroom · Smith living room · Studio office",
+      apply: function (v) { S.name = v; }, next: "orient"
+    },
+    units: {
+      section: 0, type: "choice", q: "Which units does your tape measure show?",
+      choices: function () { return [["ft", "Feet and inches"], ["cm", "Centimetres"]]; },
+      initial: function () { return S.unit; },
+      more: "Use whatever the measurements are written in. You can switch later and the plan converts everything.",
+      apply: function (v) { S.unit = v; }, next: "orient"
+    },
+    orient: {
+      section: 0, type: "info", q: "Picture yourself standing in the main doorway, facing into the room",
+      lead: function () { return "Every question after this uses that view. The wall straight ahead becomes the top of the plan, and the doorway wall is the bottom."; },
+      figure: true,
+      more: "This keeps “left” and “right” meaning the same thing in the room and on the screen. If the room has two doorways, pick the one you'd normally walk in through.",
+      next: "width"
+    },
+    width: {
+      section: 0, type: "len", plain: "ft", q: "How long is the wall straight ahead?",
+      more: "Measure corner to corner along the floor. If something is in the way, like a radiator or cabinet, measure just above it. Rounding to the nearest inch or centimetre is fine.",
+      example: function () { return ex("14' 6\" (you can also type 14 6, or 174\")", "442 cm, or 4.42 m"); },
+      check: function (v) { return v < 24 ? "That's under 2 feet. Check the number." : null; },
+      apply: function (v) { S.room.w = v; }, next: "length"
+    },
+    length: {
+      section: 0, type: "len", plain: "ft", q: "How far is it from the doorway wall to the wall straight ahead?",
+      more: "This is the length of the wall on your left or right. In most rooms they match. If they differ by more than an inch or two the room isn't quite rectangular. Use the longer one for now.",
+      example: function () { return ex("12' or 12 0", "366 cm"); },
+      check: function (v) { return v < 24 ? "That's under 2 feet. Check the number." : null; },
+      apply: function (v) { S.room.l = v; }, next: "mainDoorWidth"
+    },
+    mainDoorWidth: {
+      section: 1, type: "len", plain: "in", hi: "door", q: "How wide is the doorway you're standing in?",
+      more: "Measure the opening inside the door frame, from one side of the frame to the other. Most interior doors are 28 to 36 inches (71 to 91 cm). For double doors, measure both together.",
+      example: function () { return ex("32\" or 2' 8\"", "81 cm"); },
+      check: function (v) { return fitsWall("S", v); },
+      apply: function (v) {
+        S.doors = [{ wall: "S", width: v, offset: (S.room.w - v) / 2, hinge: "start", swing: "in" }];
+        wiz.ctx.di = 0;
+      },
+      next: "mainDoorOffset"
+    },
+    mainDoorOffset: {
+      section: 1, type: "len", plain: "in", zero: true, hi: "door", q: "How far is the doorway from the corner on your left?",
+      more: "Still facing into the room, measure along the doorway wall from the corner on your left to the edge of the door frame. " + "Enter 0 if the door is right in the corner.",
+      example: function () { return ex("18\" or 1' 6\"", "45 cm"); },
+      check: function (v) { return fitsAlong("S", v, curDoor().width); },
+      apply: function (v) { curDoor().offset = v; }, next: "mainDoorSwing"
+    },
+    mainDoorSwing: {
+      section: 1, type: "choice", hi: "door", q: "Which way does this door open?",
+      choices: function () { return [["in-left", "Into the room, hinges on your left"], ["in-right", "Into the room, hinges on your right"], ["out", "Out of the room"], ["none", "No door, just an opening"]]; },
+      initial: function () { return "in-left"; },
+      more: "A door that swings into the room needs that quarter circle of floor kept clear. The plan shades it and flags any furniture placed in it. Check the plan: the arc should match the real door. If it's mirrored, pick the other side.",
+      apply: function (v) {
+        var d = curDoor();
+        d.swing = v.indexOf("in") === 0 ? "in" : v;
+        d.hinge = v === "in-right" ? "end" : "start"; // facing into the room, your left is the left end of this wall
+      },
+      next: "moreDoors"
+    },
+    moreDoors: {
+      section: 1, type: "choice",
+      q: function () { return S.doors.length > 1 ? "Is there another door?" : "Are there other doors in this room?"; },
+      choices: yesNo("Yes, add a door", "No, that's all the doors"), initial: function () { return "no"; },
+      more: "Count closets, a bathroom, a second entrance and patio doors. Sliding and folding doors count too. Choose “No door, just an opening” for them when asked how they open.",
+      apply: function (v) {
+        if (v === "yes") { S.doors.push({ wall: "N", width: 30, offset: 0, hinge: "start", swing: "in" }); wiz.ctx.di = S.doors.length - 1; }
+      },
+      next: function (v) { return v === "yes" ? "doorWall" : "anyWindow"; }
+    },
+    doorWall: {
+      section: 1, type: "choice", hi: "door", q: "Which wall is this door on?",
+      choices: function () { return WALLS; }, initial: function () { return "N"; },
+      more: "Still picture yourself in the main doorway, facing in.",
+      apply: function (v) { var d = curDoor(); d.wall = v; d.offset = Math.max(0, (wallLen(v) - d.width) / 2); }, next: "doorWidth"
+    },
+    doorWidth: {
+      section: 1, type: "len", plain: "in", hi: "door", q: "How wide is this door's opening?",
+      more: "Measure inside the frame, side to side. Closet doors are often 24 to 30 inches. A sliding patio door is usually 60 to 72 inches.",
+      example: function () { return ex("30\" or 2' 6\"", "76 cm"); },
+      check: function (v) { return fitsWall(curDoor().wall, v); },
+      apply: function (v) { var d = curDoor(); d.width = v; d.offset = Math.max(0, (wallLen(d.wall) - v) / 2); }, next: "doorOffset"
+    },
+    doorOffset: {
+      section: 1, type: "len", plain: "in", zero: true, hi: "door",
+      q: function () { return offsetQuestion(curDoor().wall, "door"); },
+      more: OFFSET_HELP, example: function () { return ex("24\" or 2'", "60 cm"); },
+      check: function (v) { return fitsAlong(curDoor().wall, v, curDoor().width); },
+      apply: function (v) { var d = curDoor(); d.offset = alongFromNear(d.wall, v, d.width); }, next: "doorSwing"
+    },
+    doorSwing: {
+      section: 1, type: "choice", hi: "door", q: "Which way does this door open?",
+      lead: function () { return "Imagine standing inside the room, facing this door."; },
+      choices: function () { return [["in-left", "Into the room, hinges on your left"], ["in-right", "Into the room, hinges on your right"], ["out", "Out of the room"], ["none", "No door, just an opening or a sliding door"]]; },
+      initial: function () { return "in-left"; },
+      more: "Check the plan: the shaded quarter circle should match how the real door swings. If it's mirrored, go back and pick the other side.",
+      apply: function (v) {
+        var d = curDoor(), left = v !== "in-right";
+        d.swing = v.indexOf("in") === 0 ? "in" : v;
+        d.hinge = left === LEFT_IS_START[d.wall] ? "start" : "end";
+      },
+      next: "moreDoors"
+    },
+    anyWindow: {
+      section: 2, type: "choice",
+      q: function () { return S.windows.length ? "Is there another window?" : "Are there any windows?"; },
+      choices: yesNo("Yes, add a window", "No more windows"), initial: function () { return S.windows.length ? "no" : "yes"; },
+      more: "Windows decide where tall furniture can go and where a sofa or desk looks best. A door with glass counts as a door.",
+      apply: function (v) {
+        if (v === "yes") { S.windows.push({ wall: "N", width: 36, offset: 0 }); wiz.ctx.wi = S.windows.length - 1; }
+      },
+      next: function (v) { return v === "yes" ? "winWall" : "anyFixed"; }
+    },
+    winWall: {
+      section: 2, type: "choice", hi: "window", q: "Which wall is the window on?",
+      choices: function () { return WALLS; }, initial: function () { return "N"; },
+      more: "Still picture yourself in the main doorway, facing in.",
+      apply: function (v) { var w = curWin(); w.wall = v; w.offset = Math.max(0, (wallLen(v) - w.width) / 2); }, next: "winWidth"
+    },
+    winWidth: {
+      section: 2, type: "len", plain: "in", hi: "window", q: "How wide is the window?",
+      more: "Measure the window opening frame to frame, not the curtains or the trim around it. For a group of windows side by side, measure the whole group.",
+      example: function () { return ex("48\" or 4'", "120 cm"); },
+      check: function (v) { return fitsWall(curWin().wall, v); },
+      apply: function (v) { var w = curWin(); w.width = v; w.offset = Math.max(0, (wallLen(w.wall) - v) / 2); }, next: "winSill"
+    },
+    winOffset: {
+      section: 2, type: "len", plain: "in", zero: true, hi: "window",
+      q: function () { return offsetQuestion(curWin().wall, "window frame"); },
+      lead: function () {
+        return curWin().sill
+          ? "Measure to the edge of the window frame, not to the end of the sill. The sill is centred under the window on the plan."
+          : "Measure to the edge of the window frame.";
+      },
+      more: "Measure along the wall from the corner to the nearest edge of the window frame. Ignore the sill, trim and curtains. The plan places the sill from the window's position and the sill length you gave. Enter 0 if the frame starts right in the corner.",
+      example: function () { return ex("30\" or 2' 6\"", "75 cm"); },
+      check: function (v) { return fitsAlong(curWin().wall, v, curWin().width); },
+      apply: function (v) { var w = curWin(); w.offset = alongFromNear(w.wall, v, w.width); }, next: "anyWindow"
+    },
+    winSill: {
+      section: 2, type: "choice", hi: "window", q: "Does this window have a sill that sticks out into the room?",
+      choices: yesNo("Yes, add the sill", "No, or it's flush with the wall"), initial: function () { return "no"; },
+      more: "A sill that sticks out can stop a sofa, desk or bed from sitting flat against the wall. Its height decides what fits underneath: the plan turns a piece red when it's taller than the sill above it. If you're not sure now, you can add the sill later by tapping the window on the plan.",
+      apply: function (v) { if (v === "yes") { var w = curWin(); w.sill = { len: Math.min(w.width + 4, wallLen(w.wall)), depth: 3 }; } },
+      next: function (v) { return v === "yes" ? "sillLen" : "winOffset"; }
+    },
+    sillLen: {
+      section: 2, type: "len", plain: "in", hi: "window", q: "How long is the sill?",
+      more: "Measure it end to end. Sills often run a little past the window on each side.",
+      example: function () { return ex("52\" or 4' 4\"", "132 cm"); },
+      check: function (v) { return fitsWall(curWin().wall, v); },
+      apply: function (v) { curWin().sill.len = v; }, next: "sillDepth"
+    },
+    sillDepth: {
+      section: 2, type: "len", plain: "in", hi: "window", q: "How far does the sill stick out from the wall?",
+      more: "Measure from the wall surface to the front edge of the sill.",
+      example: function () { return ex("3\"", "8 cm"); },
+      check: function (v) { return v < 36 ? null : "That's more than 3 feet. Check the number."; },
+      apply: function (v) { curWin().sill.depth = v; }, next: "sillHeight"
+    },
+    sillHeight: {
+      section: 2, type: "len", plain: "in", hi: "window", optional: true, q: "How high is the top of the sill above the floor?",
+      lead: function () { return "You can leave this blank if you don't know yet."; },
+      more: "Measure from the floor to the top of the sill. This decides what can sit under the window, such as a sofa back, a desk or a headboard. A piece taller than this, pushed under the sill, turns red on the plan.",
+      example: function () { return ex("30\" or 2' 6\"", "76 cm"); },
+      apply: function (v) { if (v) curWin().sill.height = v; }, next: "winOffset"
+    },
+    anyFixed: {
+      section: 3, type: "choice",
+      q: function () { return S.items.some(function (i) { return i.fixed; }) ? "Is anything else fixed in place?" : "Is anything fixed in place along a wall?"; },
+      choices: yesNo("Yes, add one", "No, nothing else"), initial: function () { return "no"; },
+      more: "These are things the furniture has to work around: a radiator, a fireplace and its hearth, built-in shelves, a kitchen counter, a column against a wall. A floor vent you don't want to cover counts too. They're drawn in grey and can't be dragged by accident.",
+      example: "Radiator, 40\" along the wall, sticking out 6\"",
+      next: function (v) { return v === "yes" ? "fixedName" : "done"; }
+    },
+    fixedName: {
+      section: 3, type: "text", q: "What is it?", placeholder: "Radiator",
+      more: "A short name for the plan.", example: "Radiator · Fireplace · Built-in shelves · Floor vent",
+      apply: function (v) {
+        var it = { id: nextId(), name: v, w: 36, d: 12, rot: 0, fixed: true };
+        S.items.push(it); wiz.ctx.fid = it.id; wiz.ctx.fwall = "N"; sel = it.id;
+        placeFixed(it, "N");
+      },
+      next: "fixedWall"
+    },
+    fixedWall: {
+      section: 3, type: "choice", q: function () { return "Which wall is the " + curFixed().name.toLowerCase() + " against?"; },
+      choices: function () { return WALLS; }, initial: function () { return "N"; },
+      more: "Still picture yourself in the main doorway, facing in. For something in the middle of the room, like a column, skip this. Add it afterwards under “Your own piece” and tick “Fixed in place”.",
+      apply: function (v) { wiz.ctx.fwall = v; placeFixed(curFixed(), v); }, next: "fixedWidth"
+    },
+    fixedWidth: {
+      section: 3, type: "len", plain: "in", q: "How long is it along the wall?",
+      more: "Measure from one end to the other, parallel to the wall.",
+      example: function () { return ex("40\" or 3' 4\"", "100 cm"); },
+      check: function (v) { return fitsWall(wiz.ctx.fwall, v); },
+      apply: function (v) { var it = curFixed(); it.w = v; placeFixed(it, wiz.ctx.fwall); }, next: "fixedDepth"
+    },
+    fixedDepth: {
+      section: 3, type: "len", plain: "in", q: "How far does it stick out from the wall?",
+      more: "Measure from the wall to its front edge. For a fireplace, include the hearth in front of it.",
+      example: function () { return ex("6\" for a radiator, 18\" for a hearth", "15 cm for a radiator, 45 cm for a hearth"); },
+      check: function (v) { var other = wiz.ctx.fwall === "N" || wiz.ctx.fwall === "S" ? S.room.l : S.room.w; return v < other ? null : "That reaches the opposite wall. Check the number."; },
+      apply: function (v) { var it = curFixed(); it.d = v; placeFixed(it, wiz.ctx.fwall); }, next: "fixedOffset"
+    },
+    fixedOffset: {
+      section: 3, type: "len", plain: "in", zero: true,
+      q: function () { return offsetQuestion(wiz.ctx.fwall, curFixed().name.toLowerCase()); },
+      more: "Measure along the wall from the corner to the nearest end of it. Enter 0 if it starts right in the corner.",
+      example: function () { return ex("24\" or 2'", "60 cm"); },
+      check: function (v) { return fitsAlong(wiz.ctx.fwall, v, curFixed().w); },
+      apply: function (v) { var it = curFixed(); placeFixed(it, wiz.ctx.fwall, alongFromNear(wiz.ctx.fwall, v, it.w)); sel = null; }, next: "anyFixed"
+    },
+    done: {
+      section: 4, type: "info", q: "The room is ready for furniture",
+      summary: true, nextLabel: "Add furniture",
+      more: "Everything stays editable under “Room, door, windows”. Fixed features are locked. Select one and untick “Fixed in place” to move it.",
+      next: null
+    }
+  };
+
+  function val(x) { return typeof x === "function" ? x() : x; }
+
+  function orientFigure() {
+    return '<div class="orient"><svg viewBox="0 0 280 190" role="img" aria-label="The wall straight ahead is the top of the plan; the doorway is at the bottom">' +
+      '<rect x="40" y="26" width="200" height="130" fill="var(--sheet)" stroke="var(--wall)" stroke-width="5"/>' +
+      '<rect x="118" y="152" width="44" height="8" fill="var(--sheet)"/>' +
+      '<circle cx="140" cy="168" r="7" fill="var(--accent)"/><path d="M140 158 L140 120 M133 128 L140 118 L147 128" stroke="var(--accent)" stroke-width="2.5" fill="none" stroke-linecap="round"/>' +
+      '<g font-family="Archivo, Arial, sans-serif" font-size="12" font-weight="600" fill="var(--ink2)" text-anchor="middle">' +
+      '<text x="140" y="16">Straight ahead (top of the plan)</text>' +
+      '<text x="22" y="91" transform="rotate(-90 22 91)">On your left</text>' +
+      '<text x="258" y="91" transform="rotate(90 258 91)">On your right</text>' +
+      '<text x="140" y="187" fill="var(--accent)">You, in the doorway</text></g></svg></div>';
+  }
+
+  function wizRender() {
+    var st = STEPS[wiz.step], h = [];
+    wizHi = st.hi === "door" ? { kind: "door", idx: wiz.ctx.di } : st.hi === "window" ? { kind: "window", idx: wiz.ctx.wi } : null;
+    var sec = Math.min(st.section, 3);
+    h.push('<div class="wiz-top"><span>' + (st.section > 3 ? "Done" : SECTIONS[sec]) + "</span><span>" + (wiz.step === "intro" ? "" : "Question " + (wiz.history.length + 1)) + "</span></div>");
+    h.push('<div class="wiz-progress" aria-hidden="true">' + SECTIONS.map(function (_, i) { return '<i class="' + (i < st.section || (i === sec && wiz.step !== "intro") ? "on" : "") + '"></i>'; }).join("") + "</div>");
+    h.push('<form id="wizForm" novalidate>');
+    h.push('<h2 class="wiz-q" id="wizQ">' + esc(val(st.q)) + "</h2>");
+    if (st.lead) h.push('<p class="wiz-lead">' + esc(val(st.lead)) + "</p>");
+    if (st.figure) h.push(orientFigure());
+    if (st.summary) {
+      var nf = S.items.filter(function (i) { return i.fixed; }).length;
+      h.push('<ul class="wiz-summary">' +
+        "<li>" + esc((S.name ? S.name + ", " : "") + fmt(S.room.w) + " × " + fmt(S.room.l)) + "</li>" +
+        "<li>" + S.doors.length + (S.doors.length === 1 ? " door" : " doors") + "</li>" +
+        "<li>" + S.windows.length + (S.windows.length === 1 ? " window" : " windows") + "</li>" +
+        "<li>" + nf + (nf === 1 ? " fixed feature" : " fixed features") + "</li></ul>");
+    }
+    var pre = wiz.prefill; wiz.prefill = null;
+    if (st.type === "text" || st.type === "len") {
+      var ph = st.type === "len" ? val(st.example) || "" : st.placeholder || "";
+      ph = String(ph).split(" (")[0].split(", or")[0].split(" or ")[0];
+      var inp = '<input class="wiz-input" id="wizInput" type="text" autocomplete="off"' + (st.type === "len" ? ' inputmode="decimal"' : "") +
+        ' aria-labelledby="wizQ" placeholder="' + esc(ph) + '" value="' + esc(pre || "") + '">';
+      h.push(st.type === "len"
+        ? '<div class="wiz-len">' + inp + '<span class="seg unit-seg" role="group" aria-label="Units"><button type="button" data-unit="ft" title="Feet and inches">in</button><button type="button" data-unit="cm" title="Centimetres">cm</button></span></div>'
+        : inp);
+    } else if (st.type === "choice") {
+      var cur = pre || (st.initial ? st.initial() : null);
+      h.push('<div class="choices" role="radiogroup" aria-labelledby="wizQ">' + val(st.choices).map(function (c, i) {
+        return '<label class="choice"><input type="radio" name="wizChoice" id="wizC' + i + '" value="' + c[0] + '"' + (c[0] === cur ? " checked" : "") + "><span>" + esc(c[1]) + "</span></label>";
+      }).join("") + "</div>");
+    }
+    if (st.more) {
+      var exm = val(st.example);
+      h.push('<details class="wiz-more"><summary>' + (exm ? "Explain, with an example" : "Explain") + "</summary><div><p>" + esc(val(st.more)) + "</p>" +
+        (exm ? '<p class="wiz-ex"><b>Example:</b> ' + esc(exm) + "</p>" : "") + "</div></details>");
+    }
+    h.push('<p class="msg" id="wizMsg" hidden></p>');
+    h.push('<div class="wiz-nav">' + (wiz.history.length && wiz.step !== "intro" ? '<button type="button" id="wizBack">Back</button>' : "") +
+      '<button type="submit" class="primary">' + esc(st.nextLabel || "Next") + "</button></div>");
+    if (st.next !== null) h.push('<button type="button" class="linkish" id="wizCancel">Cancel and keep my previous room</button>');
+    h.push("</form>");
+    var box = $("wizard");
+    box.innerHTML = h.join("");
+    $("wizForm").addEventListener("submit", function (e) { e.preventDefault(); wizSubmit(); });
+    if ($("wizBack")) $("wizBack").addEventListener("click", wizBack);
+    if ($("wizCancel")) $("wizCancel").addEventListener("click", wizCancel);
+    var first = $("wizInput") || box.querySelector("input:checked") || box.querySelector(".primary");
+    if (first && wiz.focus) first.focus({ preventScroll: true });
+    saveWizDraft();
+    syncUnitToggles();
+    renderPlan();
+  }
+
+  function wizSubmit() {
+    var st = STEPS[wiz.step], v = null, raw = null, msg = $("wizMsg");
+    function fail(t) { msg.textContent = t; msg.hidden = false; var i = $("wizInput"); if (i) { i.setAttribute("aria-invalid", "true"); i.focus(); } }
+    if (st.type === "text") {
+      raw = $("wizInput").value; v = raw.trim();
+      if (!v && !st.optional) return fail("Type a name to continue.");
+    } else if (st.type === "len") {
+      raw = $("wizInput").value;
+      var t = raw.trim();
+      if (!t && st.optional) v = null;
+      else {
+      if (!t) return fail("Type a measurement to continue.");
+      v = st.zero && /^0+(\.0*)?\s*("|in|cm|'|ft)?$/i.test(t) ? 0 : parseLen(t, plainFor(st.plain));
+      if (!isFinite(v) || v < 0 || (v === 0 && !st.zero)) return fail("Couldn't read “" + t + "”. Try something like " + val(st.example).split(" (")[0].split(" for ")[0] + ".");
+      var bad = st.check && st.check(v);
+      if (bad) return fail(bad);
+      }
+    } else if (st.type === "choice") {
+      var c = $("wizard").querySelector("input[name=wizChoice]:checked");
+      if (!c) return fail("Pick one to continue.");
+      raw = v = c.value;
+    }
+    if (st.next === null) { wizFinish(); return; }
+    if (wiz.step !== "intro") wiz.history.push({ step: wiz.step, ctx: clone(wiz.ctx), snap: clone(S), sel: sel, raw: raw });
+    if (st.apply) st.apply(v);
+    wiz.step = typeof st.next === "function" ? st.next(v) : st.next;
+    wiz.focus = true;
+    renderPanel();
+    wizRender();
+  }
+  function wizBack() {
+    var h = wiz.history.pop(); if (!h) return;
+    S = h.snap; wiz.ctx = h.ctx; sel = h.sel; wiz.prefill = h.raw; wiz.step = h.step; wiz.focus = true;
+    renderPanel();
+    wizRender();
+  }
+  function showWizard(on) {
+    Array.prototype.forEach.call(document.querySelectorAll("#panel > .card"), function (c) { c.hidden = on ? c.id !== "wizard" : c.id === "wizard"; });
+  }
+  var WIZ_KEY = KEY + ".wizard";
+  function saveWizDraft() {
+    if (!wiz) return;
+    try { localStorage.setItem(WIZ_KEY, JSON.stringify({ step: wiz.step, ctx: wiz.ctx, backup: wiz.backup, backupSel: wiz.backupSel, backupCur: wiz.backupCur, target: wiz.target, history: wiz.history, S: S, sel: sel })); } catch (e) {}
+  }
+  function dropWizDraft() { try { localStorage.removeItem(WIZ_KEY); } catch (e) {} }
+  function resumeWizard() {
+    var d = null;
+    try { d = JSON.parse(localStorage.getItem(WIZ_KEY) || "null"); } catch (e) {}
+    if (!d || !STEPS[d.step] || !d.S || !d.S.room || !Array.isArray(d.history)) return;
+    S = d.S; sel = d.sel;
+    wiz = { step: d.step, ctx: d.ctx || {}, backup: d.backup, backupSel: d.backupSel, backupCur: d.backupCur || cur, target: d.target != null ? d.target : targetProject(), history: d.history, focus: false };
+    showWizard(true); renderPanel(); wizRender(); renderSidebar();
+  }
+  function wizCancel() {
+    dropWizDraft();
+    S = wiz.backup; sel = wiz.backupSel; cur = wiz.backupCur || cur; wiz = null; wizHi = null;
+    showWizard(false); renderPanel(); renderCatalog(); renderPlan(); renderSidebar();
+  }
+  // The finished room becomes a new room in its project; the room that was open is left untouched.
+  function wizFinish() {
+    dropWizDraft();
+    var target = wiz.target;
+    wiz = null; wizHi = null; sel = null; cur = null;
+    showWizard(false); showTab("add"); renderPanel(); save(); renderPlan(); renderSidebar();
+    addRoomAndOpen(target, clone(S)).then(function () {
+      $("catSelect").scrollIntoView({ block: "nearest", behavior: "smooth" });
+    });
+  }
+  function startWizard(target) {
+    if (wiz) return;
+    selOpening = null;
+    flushWrite();
+    wiz = { step: "intro", ctx: {}, backup: clone(S), backupSel: sel, backupCur: cur, target: target != null ? target : targetProject(), history: [], focus: true };
+    showWizard(true);
+    wizRender();
+    renderSidebar();
+  }
+  $("btnWizard").addEventListener("click", function () { startWizard(); });
+
+  if (window.ResizeObserver) new ResizeObserver(function () { if (!drag) renderPlan(); }).observe(svg);
+  window.addEventListener("resize", function () { renderPlan(); });
+  if (document.fonts && document.fonts.ready) document.fonts.ready.then(renderPlan);
+
+  renderPanel();
+  renderPlan();
+  renderSidebar();
+  if (window.matchMedia && window.matchMedia("(max-width: 1100px)").matches) $("sideDetails").open = false;
+  initWorkspace().then(resumeWizard, function (e) {
+    setStatus("Projects couldn't load (" + (e && e.message || e) + "). The room on the plan is still saved in this browser.", true);
+    resumeWizard();
+  });
+})();
+</script>

@@ -14,17 +14,17 @@ furniture around to see what fits, how much space is left, and where things conf
 
 The sidebar holds **projects** (for example a house or an apartment), each with **rooms**.
 
-- **A folder on this computer** (Chrome and Edge): choose "Use a folder on this computer".
+- **A folder on this computer** (Chrome and Edge): choose **Use a folder…** in the Projects pane.
   Each project is a sub-folder and each room is a `.roomfit.json` file, saved automatically.
   If Chrome refuses a folder (it blocks some system folders), make a new folder in Documents
-  instead. After the browser restarts it may ask for permission again: "Reconnect the folder".
+  instead. After the browser restarts it may ask for permission again: **Reconnect**.
   Changes made before reconnecting are kept in the browser and written to the file on reconnect.
 - **In the browser** (Safari, Firefox, and inside the Claude artifact): projects live in that
   browser's storage. Use "Save room to a file" to keep copies.
 
 ### Open a folder of projects
 
-"Open a folder of projects" works in every browser. Choose a folder laid out like this:
+**Open folder…** in the Projects pane works in every browser. Choose a folder laid out like this:
 
 ```
 Projects/
@@ -41,8 +41,10 @@ into the workspace; any room already there is skipped, so opening the same folde
 only what's new. In the browser workspace the original folder is never changed.
 
 The file on a Mac, the website and the Claude artifact each have their own browser storage.
-To move a room between them, save it to a file and open it with "Open a saved room", or keep
+To move a room between them, save it to a file and open it with **Open a saved room**, or keep
 it in the shared folder.
+
+The **?** next to where projects are saved explains these options in the app itself.
 
 ## Room files
 

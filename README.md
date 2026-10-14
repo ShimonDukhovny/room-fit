@@ -14,17 +14,18 @@ furniture around to see what fits, how much space is left, and where things conf
 
 The sidebar holds **projects** (for example a house or an apartment), each with **rooms**.
 
-- **A folder on this computer** (Chrome and Edge): choose **Use a folder…** in the Projects pane.
-  Each project is a sub-folder and each room is a `.roomfit.json` file, saved automatically.
+- **A folder on this computer:** choose **Open folder…** in the Projects pane. In Chrome and Edge
+  the folder is linked: each project is a sub-folder and each room is a `.roomfit.json` file,
+  saved automatically.
   If Chrome refuses a folder (it blocks some system folders), make a new folder in Documents
   instead. After the browser restarts it may ask for permission again: **Reconnect**.
   Changes made before reconnecting are kept in the browser and written to the file on reconnect.
-- **In the browser** (Safari, Firefox, and inside the Claude artifact): projects live in that
-  browser's storage. Use "Save room to a file" to keep copies.
+- **In the browser:** projects live in that browser's storage until a folder is opened. Use
+  **Save room to a file** to keep copies.
 
-### Open a folder of projects
+### Open folder…
 
-**Open folder…** in the Projects pane works in every browser. Choose a folder laid out like this:
+**Open folder…** replaces the projects in the pane with a folder's. Choose a folder laid out like this:
 
 ```
 Projects/
@@ -36,9 +37,15 @@ Projects/
 ```
 
 Each sub-folder becomes a project and the `.json` room files inside it (at any depth) become its
-rooms. Room files at the top level go into a project named after the folder. Rooms are copied
-into the workspace; any room already there is skipped, so opening the same folder again adds
-only what's new. In the browser workspace the original folder is never changed.
+rooms. Room files at the top level go into a project named after the folder.
+
+- If a room is open that isn't already a file in a linked folder, the app first offers to save
+  it to a file. **Continue without saving** goes straight on.
+- Browsers that can't write to a folder (Safari, Firefox, the Claude artifact) open it as a copy
+  kept in the browser; the original folder isn't changed.
+- The projects kept in the browser before are set aside, not deleted. **Back to browser
+  projects**, behind the **?** button, brings them back.
+- Nothing is open until a room is picked from the list.
 
 The file on a Mac, the website and the Claude artifact each have their own browser storage.
 To move a room between them, save it to a file and open it with **Open a saved room**, or keep

@@ -61,10 +61,21 @@
   .side-sum h3::before { content: "▸ "; }
   details[open] > .side-sum h3::before { content: "▾ "; }
   .side-body { display: grid; gap: 10px; margin-top: 10px; }
-  .side-where { font-size: 12.5px; color: var(--ink2); display: grid; gap: 6px; padding: 8px; background: var(--paper); border-radius: 4px; }
-  .side-where b { color: var(--ink); font-weight: 650; word-break: break-word; }
-  .side-where .row button, .side-actions button, .proj-row button.small { font-size: 12px; padding: 3px 8px; }
-  .side-actions { display: flex; flex-wrap: wrap; gap: 6px; }
+  .side-where { display: flex; align-items: center; justify-content: space-between; gap: 8px; font-size: 12.5px; color: var(--ink2); }
+  .side-where b { color: var(--ink); font-weight: 650; overflow-wrap: anywhere; }
+  .side-where .needs { color: var(--warn); font-weight: 600; }
+  .info-btn { flex: none; width: 22px; height: 22px; padding: 0; border-radius: 50%; font-size: 12px; font-weight: 700; line-height: 1; color: var(--ink2); }
+  .info-btn[aria-expanded="true"] { background: var(--accent); border-color: var(--accent); color: #fff; }
+  .side-info { font-size: 12.5px; color: var(--ink2); display: grid; gap: 6px; padding: 8px 10px; background: var(--paper); border-radius: 4px; }
+  .side-info p { margin: 0; }
+  .side-info button { justify-self: start; font-size: 12px; padding: 3px 8px; }
+  .side-actions button, .proj-row button.small { font-size: 12px; padding: 3px 8px; }
+  .side-actions, .side-more { display: flex; flex-wrap: wrap; gap: 6px; }
+  .ask { display: grid; gap: 6px; padding: 8px 10px; background: var(--accent-soft); border-radius: 4px; font-size: 12.5px; }
+  .ask p { margin: 0; }
+  .ask .row button { font-size: 12px; padding: 3px 8px; }
+  .empty-plan { display: grid; place-items: center; min-height: 320px; padding: 24px; text-align: center; color: var(--ink2); font-size: 15px; border: 1px dashed var(--rule); border-radius: 4px; }
+  .empty-plan b { color: var(--ink); }
   .tree { display: grid; gap: 6px; }
   .proj-row { display: flex; align-items: center; justify-content: space-between; gap: 6px; }
   .proj-name { border: 0; background: none; padding: 4px 2px; font-weight: 700; font-size: 14px; text-align: left; color: var(--ink); flex: 1; min-width: 0; overflow-wrap: anywhere; }
@@ -80,7 +91,8 @@
   .side-status { font-size: 12px; color: var(--ink2); margin: 0; overflow-wrap: anywhere; }
   .side-status.warn { color: var(--warn); }
   .inline-form { display: grid; gap: 6px; padding: 8px; background: var(--paper); border-radius: 4px; }
-  .confirm { display: grid; gap: 6px; padding: 8px; background: var(--bad-soft); border-radius: 4px; font-size: 12.5px; }
+  .confirm { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; padding: 6px 8px; margin: 2px 0 4px 8px; background: var(--bad-soft); border-radius: 4px; font-size: 12.5px; }
+  .confirm button { font-size: 11.5px; padding: 2px 7px; }
   .planner { display: grid; grid-template-columns: minmax(0, 1fr) 340px; gap: 18px; align-items: start; }
   @media (max-width: 880px) { .planner { grid-template-columns: minmax(0, 1fr); } }
   .board { background: var(--sheet); border: 1px solid var(--rule); border-radius: var(--radius); padding: 10px; display: grid; gap: 8px; }
@@ -242,13 +254,18 @@
     <details id="sideDetails" open>
       <summary class="side-sum"><h3>Projects</h3><span class="hint" id="sideCurrent"></span></summary>
       <div class="side-body">
-        <div class="side-where" id="sideWhere"></div>
+        <div class="side-where">
+          <span id="whereLabel"></span>
+          <button type="button" class="info-btn" id="btnSideInfo" aria-expanded="false" aria-controls="sideInfo" title="How projects are saved">?</button>
+        </div>
+        <div class="side-info" id="sideInfo" hidden></div>
         <div class="side-actions">
-          <button type="button" id="btnNewProject">New project</button>
-          <button type="button" id="btnOpenFolder">Open a folder of projects</button>
+          <button type="button" id="btnNewProject" title="Create a project">+ Project</button>
+          <button type="button" id="btnOpenFolder" title="Open a folder of projects: each sub-folder is a project and its .json files are rooms">Open folder…</button>
+          <span class="side-more" id="sideMore"></span>
           <input type="file" id="folderInput" webkitdirectory multiple hidden>
         </div>
-        <p class="hint" id="openFolderHint">Each sub-folder becomes a project, and the .json room files inside it become its rooms.</p>
+        <div class="ask" id="openAsk" hidden></div>
         <form class="inline-form" id="newProjectForm" hidden novalidate>
           <label>Project name<input id="newProjectName" type="text" autocomplete="off" placeholder="Smith house"></label>
           <div class="row"><button type="submit" class="primary">Create project</button><button type="button" id="btnNewProjectCancel">Cancel</button></div>
@@ -267,6 +284,9 @@
 
   <div class="planner">
     <div class="board">
+      <div class="empty-plan" id="emptyPlan" hidden>
+        <p><b>Pick a room</b> from the Projects list, or start a new one.</p>
+      </div>
       <svg id="plan" tabindex="0" aria-label="Room plan. Drag furniture to move it. Arrow keys nudge the selected piece, R rotates it."></svg>
       <div class="legend">
         <span><i class="sw"></i>Furniture</span>
@@ -1156,7 +1176,9 @@
     nl.hidden = !A.notes.length;
     nl.innerHTML = A.notes.map(function (t) { return "<li>" + esc(t) + "</li>"; }).join("");
     $("openPct").textContent = Math.round(A.open * 100) + "%";
-    $("roomTitle").textContent = S.name || "Untitled room";
+    var none = empty && !wiz;
+    $("roomTitle").textContent = none ? "Pick a room" : S.name || "Untitled room";
+    document.querySelector("header .lede").hidden = none;
     $("ledeRoom").textContent = fmt(S.room.w) + " × " + fmt(S.room.l) + " room";
     $("floorArea").textContent = area(S.room.w * S.room.l);
   }
@@ -1688,28 +1710,31 @@
       s.windows.length + (s.windows.length === 1 ? " window, " : " windows, ") +
       nf + (nf === 1 ? " piece of furniture" : " pieces of furniture");
   }
-  $("btnExport").addEventListener("click", function () {
+  // resolves true once the file is saved (or handed to the browser's download)
+  function saveRoomFile() {
     var base = (S.name || "room").replace(/[^A-Za-z0-9 _-]+/g, "").trim().replace(/\s+/g, "-").toLowerCase() || "room";
+    var done = "Saved to the Downloads folder. Move it somewhere safe, or email it to yourself.";
     if (!dl && linkSave) {
       var a = document.createElement("a");
       a.href = URL.createObjectURL(new Blob([exportText()], { type: "application/json" }));
       a.download = base + ".roomfit.json";
       document.body.appendChild(a); a.click();
       setTimeout(function () { URL.revokeObjectURL(a.href); a.remove(); }, 2000);
-      keepMsg("Saved to the Downloads folder. Move it somewhere safe, or email it to yourself.");
-      return;
+      keepMsg(done);
+      return Promise.resolve(true);
     }
-    if (!dl) return;
-    dl.save({ filename: base + ".roomfit.json", data: exportText() }).then(function () {
-      keepMsg("Saved to the Downloads folder. Move it somewhere safe, or email it to yourself.");
-    }, function (err) {
+    if (!dl) { setStatus("Saving a file isn't available here", true, "Use Copy as text instead."); return Promise.resolve(false); }
+    return dl.save({ filename: base + ".roomfit.json", data: exportText() }).then(function () { keepMsg(done); return true; }, function (err) {
       var c = err && err.code;
-      if (c === "declined") return;
-      if (c === "rate_limited") { keepMsg("A save prompt is already open.", true); return; }
+      if (c === "declined") return false;
+      if (c === "rate_limited") { keepMsg("A save prompt is already open.", true); return false; }
       $("btnExport").hidden = true;
       keepMsg("Saving a file isn't available here. Use Copy as text instead.", true);
+      setStatus("Saving a file isn't available here", true, "Use Copy as text in the room's panel instead.");
+      return false;
     });
-  });
+  }
+  $("btnExport").addEventListener("click", function () { saveRoomFile(); });
   $("btnCopy").addEventListener("click", function () {
     var t = exportText(), box = $("copyBox");
     function fallback() {
@@ -1769,8 +1794,9 @@
   // The room on the plan is also cached under KEY on every change, so a reload or a lost folder
   // permission never loses edits; they are written to the file when the folder is reconnected.
   var WS_KEY = "roomfit.ws.v1", CUR_KEY = KEY + ".cur", UI_KEY = "roomfit.ui.v1", LOOSE = "";
-  var ws = { mode: "browser", folderCapable: false, root: null, perm: "none", tree: [], copyOffer: 0 };
-  var cur = null;            // { p: project id, r: room id } of the room on the plan, or null if it has no home yet
+  var ws = { mode: "browser", folderCapable: false, root: null, perm: "none", tree: [] };
+  var cur = null;            // { p: project id, r: room id } of the room on the plan
+  var empty = false;         // no room open, for example right after opening a folder
   var pendingWrite = null, writeTimer = null, writeChain = Promise.resolve();
   var ui = (function () { try { return JSON.parse(localStorage.getItem(UI_KEY) || "{}") || {}; } catch (e) { return {}; } })();
   function saveUi() { try { localStorage.setItem(UI_KEY, JSON.stringify(ui)); } catch (e) {} }
@@ -1778,7 +1804,7 @@
 
   function readCur() { try { return JSON.parse(localStorage.getItem(CUR_KEY) || "null"); } catch (e) { return null; } }
   function writeCur(dirty) {
-    try { localStorage.setItem(CUR_KEY, JSON.stringify(cur ? { mode: ws.mode, p: cur.p, r: cur.r, dirty: !!dirty } : { mode: ws.mode, dirty: !!dirty })); } catch (e) {}
+    try { localStorage.setItem(CUR_KEY, JSON.stringify(cur ? { mode: ws.mode, p: cur.p, r: cur.r, dirty: !!dirty } : { mode: ws.mode, dirty: !!dirty, empty: empty })); } catch (e) {}
   }
   function isDirty() { var m = readCur(); return !!(m && m.dirty); }
 
@@ -1807,7 +1833,7 @@
 
   // ----- browser storage -----
   function bsLoad() { try { var d = JSON.parse(localStorage.getItem(WS_KEY) || "null"); if (d && Array.isArray(d.projects)) return d; } catch (e) {} return null; }
-  function bsSave(d) { try { localStorage.setItem(WS_KEY, JSON.stringify(d)); } catch (e) { setStatus("This browser's storage is full. Save rooms to files to keep them.", true); } }
+  function bsSave(d) { try { localStorage.setItem(WS_KEY, JSON.stringify(d)); } catch (e) { setStatus("Browser storage is full", true, "Save rooms to files to keep them."); } }
   function bsTree(d) {
     return d.projects.map(function (pr) {
       return { id: pr.id, name: pr.name, rooms: pr.rooms.map(function (rm) { return { id: rm.id, name: rm.room.name || "Untitled room", w: rm.room.room.w, l: rm.room.room.l }; }) };
@@ -1905,13 +1931,13 @@
     clearTimeout(writeTimer); writeTimer = null;
     var job = pendingWrite; pendingWrite = null;
     if (!job) return writeChain;
-    if (ws.perm !== "granted") { setStatus("Changes are kept in this browser until the folder is reconnected.", true); return writeChain; }
+    if (ws.perm !== "granted") { setStatus("Not saved to the folder yet", true, "Changes are kept in this browser until the folder is reconnected."); return writeChain; }
     setStatus("Saving…");
     return writeQueued(job.p, job.r, job.room).then(function () {
       if (!pendingWrite && cur && cur.p === job.p && cur.r === job.r) writeCur(false);
-      setStatus("Saved to " + (job.p ? job.p + " / " : "") + job.r);
+      setStatus("Saved", false, (job.p ? job.p + " / " : "") + job.r);
     }, function (e) {
-      setStatus("Couldn't save to the folder (" + (e && e.message || e) + "). Your changes are kept in this browser.", true);
+      setStatus("Couldn't save to the folder", true, (e && e.message || e) + ". Your changes are kept in this browser.");
     });
   }
   // keep the sidebar's name and size for the open room current without a full rescan
@@ -1926,7 +1952,8 @@
 
   function projectName(p) {
     var pr = ws.tree.filter(function (x) { return x.id === p; })[0];
-    return pr ? pr.name : p === LOOSE ? "Not in a project" : "a project";
+    // in a folder a project's id is its folder name, so the name is known even before reconnecting
+    return pr ? pr.name : p === LOOSE ? "Not in a project" : ws.mode === "folder" && p ? p : "a project";
   }
   function targetProject() {
     if (cur && ws.tree.some(function (x) { return x.id === cur.p; })) return cur.p;
@@ -1938,11 +1965,11 @@
     if (wiz || (cur && cur.p === p && cur.r === r)) return;
     await flushWrite();
     var room = await readRoom(p, r);
-    if (!room) { setStatus("Couldn't open that room. The file may have been moved or isn't a room file.", true); return; }
-    S = room; sel = null; selOpening = null; cur = { p: p, r: r };
+    if (!room) { setStatus("Couldn't open that room", true, "The file may have been moved, or it isn't a room file."); return; }
+    S = room; sel = null; selOpening = null; cur = { p: p, r: r }; empty = false;
     writeCur(false); save();
     renderPanel(); renderCatalog(); renderPlan(); renderSidebar();
-    setStatus(ws.mode === "folder" ? "Opened " + (p ? p + " / " : "") + r : "");
+    setStatus("");
   }
   async function addRoomAndOpen(p, room) {
     await flushWrite();
@@ -1950,54 +1977,104 @@
       var id = await createRoom(p, room);
       cur = null;
       await openRoom(p, id);
-    } catch (e) { setStatus("Couldn't add the room (" + (e && e.message || e) + ").", true); }
+    } catch (e) { setStatus("Couldn't add the room", true, String(e && e.message || e)); }
   }
 
-  // ----- connecting a folder -----
+  // ----- opening a folder -----
+  // "Open folder…" replaces the projects in the pane with the folder's: each sub-folder is a
+  // project and the .json files in it are rooms. Where the browser can write to a folder (Chrome,
+  // Edge) the folder is linked and changes save to its files. Elsewhere (Safari, Firefox, inside
+  // the Claude artifact) the folder is read into a copy kept in this browser. Either way the
+  // projects kept in the browser before are hidden, not erased, and "Back to browser projects"
+  // brings them back. Nothing is open until a room is picked.
+  var WS_HIDDEN_KEY = "roomfit.ws.hidden.v1";
+  function showEmpty() {
+    cur = null; empty = true; sel = null; selOpening = null;
+    writeCur(false);
+    renderPanel(); renderPlan(); renderSidebar();
+    if ($("sideDetails")) $("sideDetails").open = true;
+  }
   async function pickFolder() {
     var h;
     try { h = await window.showDirectoryPicker({ id: "roomfit", mode: "readwrite" }); }
     catch (e) {
       if (e && e.name === "AbortError") return;
       ws.folderCapable = false; renderSidebar();
-      setStatus("This browser won't let the page use a folder here, so projects stay in this browser.", true);
+      setStatus("Folders can't be linked here", true, "This browser won't let the page write to a folder. Open folder… will load a copy instead.");
       return;
     }
-    var fromBrowser = ws.mode === "browser" ? bsLoad() : null;
-    var oldCur = cur;
+    await flushWrite();
     ws.root = h; ws.mode = "folder"; ws.perm = "granted";
     try { await idbSet("root", h); } catch (e) {}
     await fsRefresh();
-    ws.copyOffer = fromBrowser ? fromBrowser.projects.reduce(function (n, pr) { return n + pr.rooms.length; }, 0) : 0;
-    ws.copyFrom = fromBrowser; ws.copyCur = oldCur;
-    cur = null; writeCur(false);
-    renderSidebar();
-    setStatus("Using the folder " + h.name + ".");
+    setStatus("");
+    showEmpty();
   }
-  async function copyBrowserRooms() {
-    var d = ws.copyFrom; if (!d) return;
-    var mapped = null;
-    setStatus("Copying rooms into the folder…");
-    try {
-      for (var i = 0; i < d.projects.length; i++) {
-        var pr = d.projects[i], name = cleanName(pr.name) || "My rooms";
-        await ws.root.getDirectoryHandle(name, { create: true });
-        for (var j = 0; j < pr.rooms.length; j++) {
-          var dir = await fsDir(name), file = await fsUniqueFile(dir, cleanName(pr.rooms[j].room.name) || "Room");
-          await writeQueued(name, file, normalize(clone(pr.rooms[j].room)));
-          if (ws.copyCur && ws.copyCur.p === pr.id && ws.copyCur.r === pr.rooms[j].id) mapped = { p: name, r: file };
-        }
-      }
-      await fsRefresh();
-      ws.copyOffer = 0; ws.copyFrom = null;
-      if (mapped) { cur = mapped; writeCur(false); scheduleWrite(); }
-      renderSidebar();
-      setStatus("Copied. The rooms are now files in " + ws.root.name + ".");
-    } catch (e) { setStatus("Copying stopped (" + (e && e.message || e) + "). Nothing in this browser was removed.", true); }
+  // a browser that can't write to folders reads the chosen folder into a copy
+  async function openFolderCopy(files) {
+    if (!files.length) return;
+    var top = cleanName((files[0].webkitRelativePath || "").split("/")[0]) || "Opened folder";
+    var projects = [], byName = {}, skipped = 0, count = 0;
+    for (var i = 0; i < files.length; i++) {
+      var f = files[i], parts = (f.webkitRelativePath || f.name).split("/");
+      if (!/\.json$/i.test(f.name) || parts.some(function (x) { return x.charAt(0) === "."; })) continue;
+      var room = null;
+      try { room = normalize(JSON.parse(await f.text())); } catch (e) {}
+      if (!room) { skipped++; continue; }
+      if (!room.name) room.name = f.name.replace(/(\.roomfit)?\.json$/i, "");
+      var name = cleanName(parts.length > 2 ? parts[1] : top) || top;
+      if (!byName[name]) { byName[name] = { id: uid(), name: name, rooms: [] }; projects.push(byName[name]); }
+      byName[name].rooms.push({ id: uid(), room: room }); count++;
+    }
+    if (!count) { setStatus("No rooms found in " + top, true, "Rooms are .json files saved from this page."); return; }
+    await flushWrite();
+    var d = bsLoad();
+    if (d && !d.source) {
+      // keep the browser's own projects aside; a copy of another folder is simply replaced
+      var hidden = null;
+      try { hidden = JSON.parse(localStorage.getItem(WS_HIDDEN_KEY) || "null"); } catch (e) {}
+      if (hidden && Array.isArray(hidden.projects)) d.projects = hidden.projects.concat(d.projects);
+      try { localStorage.setItem(WS_HIDDEN_KEY, JSON.stringify(d)); } catch (e) { setStatus("Browser storage is full", true); return; }
+    }
+    projects.sort(function (a, b) { return a.name.localeCompare(b.name); });
+    bsSave({ source: { name: top }, projects: projects });
+    ws.mode = "browser"; ws.tree = bsTree(bsLoad());
+    setStatus("Opened " + top, false, count + (count === 1 ? " room" : " rooms") + " in " + projects.length + (projects.length === 1 ? " project" : " projects") + "." +
+      (skipped ? " " + skipped + (skipped === 1 ? " file isn't a room and was skipped." : " files aren't rooms and were skipped.") : ""));
+    showEmpty();
   }
+  function hiddenProjects() { try { var d = JSON.parse(localStorage.getItem(WS_HIDDEN_KEY) || "null"); return d && Array.isArray(d.projects) ? d : null; } catch (e) { return null; } }
+  function startOpenFolder() {
+    $("openAsk").hidden = true;
+    if (ws.folderCapable) pickFolder();
+    else { $("folderInput").value = ""; $("folderInput").click(); }
+  }
+  // Ask before replacing what's open: the open room can be saved to a file first. A room that is
+  // already a file in a linked folder has nothing to lose, so no question is asked.
+  function requestOpenFolder() {
+    if (wiz) return;
+    var saved = ws.mode === "folder" && ws.perm === "granted" && !pendingWrite && !isDirty();
+    if (empty || saved) { startOpenFolder(); return; }
+    renderAsk(false);
+  }
+  function renderAsk(done) {
+    var box = $("openAsk"), name = S.name || "this room";
+    box.innerHTML = done
+      ? '<p>Saved “' + esc(name) + '”.</p><div class="row"><button type="button" class="primary" data-ask="go">Open folder…</button><button type="button" data-ask="cancel">Cancel</button></div>'
+      : '<p title="The opened folder replaces the projects listed here">Save “' + esc(name) + '” before opening a folder?</p>' +
+        '<div class="row"><button type="button" class="primary" data-ask="save">Save room to a file</button><button type="button" data-ask="go">Continue without saving</button><button type="button" data-ask="cancel">Cancel</button></div>';
+    box.hidden = false;
+  }
+  $("openAsk").addEventListener("click", function (e) {
+    var b = e.target.closest("[data-ask]"); if (!b) return;
+    var a = b.getAttribute("data-ask");
+    if (a === "cancel") $("openAsk").hidden = true;
+    else if (a === "go") startOpenFolder();
+    else if (a === "save") saveRoomFile().then(function (ok) { if (ok) renderAsk(true); });
+  });
   async function reconnect() {
     try { ws.perm = await ws.root.requestPermission({ mode: "readwrite" }); } catch (e) { ws.perm = "denied"; }
-    if (ws.perm !== "granted") { renderSidebar(); setStatus("The folder wasn't reconnected. Changes stay in this browser for now.", true); return; }
+    if (ws.perm !== "granted") { renderSidebar(); setStatus("Not reconnected", true, "Changes stay in this browser for now."); return; }
     await fsRefresh();
     await afterConnect();
   }
@@ -2005,7 +2082,7 @@
   // the room from its file in case it changed elsewhere (for example on another computer).
   async function afterConnect() {
     var exists = cur && ws.tree.some(function (pr) { return pr.id === cur.p && pr.rooms.some(function (rm) { return rm.id === cur.r; }); });
-    if (cur && !exists) cur = null;
+    if (cur && !exists) { cur = null; empty = true; }
     if (cur && isDirty()) {
       pendingWrite = { p: cur.p, r: cur.r, room: clone(S) };
       await flushWrite();
@@ -2016,54 +2093,64 @@
     writeCur(false);
     renderSidebar();
   }
-  async function useBrowserInstead() {
+  // back to the projects kept in this browser: unlink the folder, or close the folder copy
+  async function backToBrowser() {
     await flushWrite();
-    try { await idbDel("root"); } catch (e) {}
-    ws.mode = "browser"; ws.root = null; ws.perm = "none";
-    var d = bsLoad() || { projects: [] };
-    if (!d.projects.length) d.projects.push({ id: uid(), name: "My rooms", rooms: [] });
-    var id = uid(); d.projects[0].rooms.push({ id: id, room: clone(S) }); bsSave(d);
-    ws.tree = bsTree(d); cur = { p: d.projects[0].id, r: id }; writeCur(false);
-    renderSidebar();
-    setStatus("Projects are now kept in this browser. The room on the plan was added to " + d.projects[0].name + ".");
+    if (ws.mode === "folder") {
+      try { await idbDel("root"); } catch (e) {}
+      ws.root = null; ws.perm = "none";
+    } else {
+      var hidden = hiddenProjects();
+      if (hidden) { bsSave(hidden); try { localStorage.removeItem(WS_HIDDEN_KEY); } catch (e) {} }
+    }
+    ws.mode = "browser";
+    var d = bsLoad();
+    if (!d || d.source) { d = { projects: [{ id: uid(), name: "My rooms", rooms: [] }] }; bsSave(d); }
+    ws.tree = bsTree(d);
+    setStatus("");
+    showEmpty();
   }
 
   // ----- sidebar -----
   var confirmDelete = null, saveHere = false;
-  function setStatus(t, warn) { var el = $("sideStatus"); el.textContent = t || ""; el.className = "side-status" + (warn ? " warn" : ""); }
+  // status: a word or two in the pane, with any detail in its tooltip
+  function setStatus(t, warn, detail) {
+    var el = $("sideStatus"); el.textContent = t || ""; el.title = detail || "";
+    el.className = "side-status" + (warn ? " warn" : "");
+  }
   function renderSidebar() {
-    var h = [], where = $("sideWhere");
-    if (ws.mode === "folder") {
-      if (ws.perm === "granted") {
-        h.push("<span>Projects are files in the folder <b>" + esc(ws.root.name) + "</b>. Changes save automatically.</span>");
-        h.push('<div class="row"><button type="button" data-ws="pick">Use a different folder</button><button type="button" data-ws="browser">Keep projects in this browser instead</button></div>');
-        if (ws.copyOffer) h.push('<div class="row"><button type="button" class="primary" data-ws="copy">Copy the ' + ws.copyOffer + (ws.copyOffer === 1 ? " room" : " rooms") + " kept in this browser into this folder</button></div>");
-      } else {
-        h.push("<span>Projects are files in the folder <b>" + esc(ws.root.name) + "</b>. The browser needs your permission again to use it.</span>");
-        h.push('<div class="row"><button type="button" class="primary" data-ws="reconnect">Reconnect the folder</button></div>');
-        h.push("<span>Changes you make before reconnecting are kept in this browser and saved to the file when you reconnect.</span>");
-      }
+    var label, more = [], info = [], d = ws.mode === "browser" ? bsLoad() : null, copy = d && d.source;
+    var back = '<button type="button" data-ws="back">Back to browser projects</button>';
+    if (ws.mode === "folder" && ws.perm === "granted") {
+      label = "Folder: <b>" + esc(ws.root.name || "chosen folder") + "</b>";
+      info.push("<p>Each sub-folder of <b>" + esc(ws.root.name || "this folder") + "</b> is a project and each .json file in it is a room. Changes save to the files automatically.</p>",
+        "<p><b>Open folder…</b> switches to another folder.</p>", back);
+    } else if (ws.mode === "folder") {
+      label = "Folder: <b>" + esc(ws.root.name || "chosen folder") + '</b> · <span class="needs">needs permission</span>';
+      more.push('<button type="button" class="primary" data-ws="reconnect" title="Let the browser use the folder again">Reconnect</button>');
+      info.push("<p>After a restart the browser asks again before using the folder. Changes made meanwhile are kept in this browser and saved to the file when you reconnect.</p>", back);
+    } else if (copy) {
+      label = 'Copy of folder: <b title="Changes are kept in this browser, not in the folder">' + esc(copy.name) + "</b>";
+      info.push("<p>This browser can't save into a folder, so <b>" + esc(copy.name) + "</b> was opened as a copy. Changes stay in this browser; use <b>Save room to a file</b> to update the folder.</p>");
+      if (hiddenProjects()) info.push("<p>The projects kept in this browser before are set aside, not deleted. Going back closes this copy.</p>", back);
     } else {
-      h.push("<span>Projects are kept in this browser. Use “Save room to a file” to keep a copy anywhere else.</span>");
-      if (ws.folderCapable) h.push('<div class="row"><button type="button" class="primary" data-ws="pick">Use a folder on this computer</button></div><span>Recommended: each room becomes a file on this computer. Make a new folder for it, for example in Documents.</span>');
+      label = "Saved in this browser";
+      info.push("<p>Projects are kept in this browser. Use <b>Save room to a file</b> to keep a copy anywhere else.</p>",
+        "<p><b>Open folder…</b> opens a folder of projects instead: each sub-folder is a project and its .json files are rooms. " +
+        (ws.folderCapable ? "Changes then save straight to those files." : "This browser opens it as a copy, so changes stay here.") +
+        " The projects here are set aside, not deleted.</p>");
     }
-    where.innerHTML = h.join("");
+    $("whereLabel").innerHTML = label;
+    $("sideMore").innerHTML = more.join("");
+    $("sideInfo").innerHTML = info.join("");
 
     var t = [], collapsed = ui.collapsed || {};
-    if (ws.mode === "folder" && ws.perm !== "granted") {
-      t.push('<p class="empty-proj">The project list appears once the folder is reconnected.</p>');
-    }
-    if (!cur && !(ws.mode === "folder" && ws.perm !== "granted")) {
-      t.push('<div class="inline-form"><span class="hint">The room on the plan, <b>' + esc(S.name || "Untitled room") + "</b>, isn't saved in a project yet.</span>" +
-        (ws.tree.filter(function (x) { return x.id !== LOOSE; }).length
-          ? '<label>Project<select id="saveHereSel">' + ws.tree.filter(function (x) { return x.id !== LOOSE; }).map(function (pr) { return '<option value="' + esc(pr.id) + '">' + esc(pr.name) + "</option>"; }).join("") + "</select></label>" +
-            '<div class="row"><button type="button" class="primary" data-ws="savehere">Save it to this project</button></div>'
-          : '<span class="hint">Create a project first, then save it there.</span>') + "</div>");
-    }
+    var disconnected = ws.mode === "folder" && ws.perm !== "granted";
+    if (disconnected) t.push('<p class="empty-proj">Reconnect to see the projects.</p>');
     ws.tree.forEach(function (pr) {
       var open = !collapsed[pr.id];
       t.push('<div class="proj"><div class="proj-row"><button type="button" class="proj-name" data-toggle="' + esc(pr.id) + '" aria-expanded="' + open + '">' + (open ? "▾ " : "▸ ") + esc(pr.name) + "</button>" +
-        (pr.id === LOOSE ? "" : '<button type="button" class="small" data-newroom="' + esc(pr.id) + '" title="Start a new room in ' + esc(pr.name) + '">New room</button>') + "</div>");
+        (pr.id === LOOSE ? "" : '<button type="button" class="small" data-newroom="' + esc(pr.id) + '" title="New room in ' + esc(pr.name) + '">+ Room</button>') + "</div>");
       if (open) {
         t.push('<ul class="rooms">');
         if (!pr.rooms.length) t.push('<li class="empty-proj">No rooms yet</li>');
@@ -2072,8 +2159,8 @@
           t.push('<li><button type="button" class="room-link' + (active ? " active" : "") + '" data-open="' + esc(pr.id) + "\u0001" + esc(rm.id) + '"' + (active ? ' aria-current="true"' : "") + ">" +
             esc(rm.name) + "<small>" + esc(fmt(rm.w) + " × " + fmt(rm.l)) + "</small></button>");
           if (active) {
-            t.push('<div class="room-tools"><button type="button" data-ws="dup">Duplicate as another option</button>' + (ws.mode === "browser" ? '<button type="button" data-ws="del">Delete</button>' : "") + "</div>");
-            if (confirmDelete) t.push('<div class="confirm">Delete ' + esc(rm.name) + "? This can't be undone. Save it to a file first if you might want it again.<div class=\"row\"><button type=\"button\" class=\"primary\" data-ws=\"delyes\">Delete room</button><button type=\"button\" data-ws=\"delno\">Keep it</button></div></div>");
+            t.push('<div class="room-tools"><button type="button" data-ws="dup" title="Copy this room to try another layout">Duplicate</button>' + (ws.mode === "browser" ? '<button type="button" data-ws="del" title="Delete this room">Delete</button>' : "") + "</div>");
+            if (confirmDelete) t.push('<div class="confirm" title="This can\'t be undone">Delete for good?<button type="button" class="primary" data-ws="delyes">Delete</button><button type="button" data-ws="delno">Cancel</button></div>');
           }
           t.push("</li>");
         });
@@ -2081,7 +2168,7 @@
       }
       t.push("</div>");
     });
-    if (ws.mode === "folder" && ws.perm === "granted" && !ws.tree.length) t.push('<p class="empty-proj">This folder has no projects yet. Create one to start.</p>');
+    if (ws.mode === "folder" && ws.perm === "granted" && !ws.tree.length) t.push('<p class="empty-proj">No projects yet.</p>');
     $("tree").innerHTML = t.join("");
 
     var curProj = cur ? projectName(cur.p) : "";
@@ -2091,6 +2178,18 @@
       ? "This room is already a file in your folder. Save another copy to share it or keep a backup."
       : "This room is kept only in this browser. Save a copy to keep it safe or to open it somewhere else.";
     $("sidebar").classList.toggle("locked", !!wiz);
+    applyEmpty();
+  }
+  // with no room open the plan and the room's tools give way to a short prompt
+  function applyEmpty() {
+    var none = empty && !wiz; // the wizard draws its room on the plan even when nothing was open
+    $("emptyPlan").hidden = !none;
+    if (none) svg.setAttribute("hidden", ""); else svg.removeAttribute("hidden"); // an <svg> has no .hidden property
+    document.querySelector(".board .legend").hidden = none;
+    if (wiz) return;
+    Array.prototype.forEach.call(document.querySelectorAll("#panel > .card"), function (c) {
+      c.hidden = c.id === "wizard" || (empty && c.id !== "launch");
+    });
   }
 
   $("sidebar").addEventListener("click", function (e) {
@@ -2102,11 +2201,8 @@
     }
     if (b.hasAttribute("data-open")) { var pr = b.getAttribute("data-open").split("\u0001"); confirmDelete = null; openRoom(pr[0], pr[1]); return; }
     if (b.hasAttribute("data-newroom")) { startWizard(b.getAttribute("data-newroom")); return; }
-    if (act === "pick") pickFolder();
-    else if (act === "copy") copyBrowserRooms();
-    else if (act === "reconnect") reconnect();
-    else if (act === "browser") useBrowserInstead();
-    else if (act === "savehere") addRoomAndOpen($("saveHereSel").value, clone(S));
+    if (act === "reconnect") reconnect();
+    else if (act === "back") backToBrowser();
     else if (act === "dup") {
       var copy = clone(S); copy.name = (S.name || "Room") + ", option " + (1 + ws.tree.filter(function (x) { return x.id === cur.p; })[0].rooms.length);
       addRoomAndOpen(cur.p, copy);
@@ -2120,11 +2216,16 @@
       var next = null;
       ws.tree.some(function (x) { if (x.rooms.length) { next = { p: x.id, r: x.rooms[0].id }; return true; } });
       cur = null;
-      if (next) openRoom(next.p, next.r); else { writeCur(false); renderSidebar(); }
+      if (next) openRoom(next.p, next.r); else showEmpty();
     }
   });
+  $("btnSideInfo").addEventListener("click", function () {
+    var open = $("sideInfo").hidden;
+    $("sideInfo").hidden = !open;
+    this.setAttribute("aria-expanded", open ? "true" : "false");
+  });
   $("btnNewProject").addEventListener("click", function () {
-    if (ws.mode === "folder" && ws.perm !== "granted") { setStatus("Reconnect the folder first.", true); return; }
+    if (ws.mode === "folder" && ws.perm !== "granted") { setStatus("Reconnect the folder first", true); return; }
     $("newProjectForm").hidden = false; $("newProjectName").value = ""; $("newProjectName").focus();
   });
   $("btnNewProjectCancel").addEventListener("click", function () { $("newProjectForm").hidden = true; });
@@ -2133,68 +2234,12 @@
     var name = cleanName($("newProjectName").value);
     if (!name) { $("newProjectName").setAttribute("aria-invalid", "true"); return; }
     $("newProjectName").removeAttribute("aria-invalid");
-    createProject(name).then(function () { $("newProjectForm").hidden = true; renderSidebar(); setStatus("Created " + name + ". Add a room with New room."); },
-      function (err) { setStatus("Couldn't create the project (" + (err && err.message || err) + ").", true); });
+    createProject(name).then(function () { $("newProjectForm").hidden = true; renderSidebar(); setStatus(""); },
+      function (err) { setStatus("Couldn't create the project", true, String(err && err.message || err)); });
   });
 
-  // ----- opening a folder of projects -----
-  // Each sub-folder of the chosen folder becomes a project, and the room files (.json) inside it,
-  // at any depth, become its rooms. Room files at the top level go into a project named after the
-  // folder itself. Rooms are copied into the workspace; a room that is already there is skipped,
-  // so opening the same folder twice adds nothing new.
-  $("btnOpenFolder").addEventListener("click", function () {
-    if (wiz) return;
-    if (ws.mode === "folder" && ws.perm !== "granted") { setStatus("Reconnect the folder first.", true); return; }
-    $("folderInput").value = "";
-    $("folderInput").click();
-  });
-  $("folderInput").addEventListener("change", function () { importFolder(Array.prototype.slice.call(this.files || [])); });
-  async function importFolder(files) {
-    if (!files.length) return;
-    var top = (files[0].webkitRelativePath || "").split("/")[0] || "Opened folder";
-    var groups = {}, order = [], skipped = 0;
-    for (var i = 0; i < files.length; i++) {
-      var f = files[i], parts = (f.webkitRelativePath || f.name).split("/");
-      if (!/\.json$/i.test(f.name) || parts.some(function (x) { return x.charAt(0) === "."; })) continue;
-      var room = null;
-      try { room = normalize(JSON.parse(await f.text())); } catch (e) {}
-      if (!room) { skipped++; continue; }
-      if (!room.name) room.name = f.name.replace(/(\.roomfit)?\.json$/i, "");
-      var proj = cleanName(parts.length > 2 ? parts[1] : top) || "Opened folder";
-      if (!groups[proj]) { groups[proj] = []; order.push(proj); }
-      groups[proj].push(room);
-    }
-    if (!order.length) { setStatus("No room files were found in " + top + ". Rooms are .json files saved from this page.", true); return; }
-    await flushWrite();
-    var added = 0, already = 0, first = null;
-    try {
-      for (var k = 0; k < order.length; k++) {
-        var name = order[k];
-        var pr = ws.tree.filter(function (x) { return x.id !== LOOSE && x.name.toLowerCase() === name.toLowerCase(); })[0];
-        var pid = pr ? pr.id : await createProject(name), seen = [];
-        if (pr) for (var e = 0; e < pr.rooms.length; e++) { var have = await readRoom(pid, pr.rooms[e].id); if (have) seen.push(JSON.stringify(have)); }
-        for (var j = 0; j < groups[name].length; j++) {
-          var key = JSON.stringify(groups[name][j]);
-          if (seen.indexOf(key) >= 0) { already++; continue; }
-          var rid = await createRoom(pid, groups[name][j]);
-          seen.push(key); added++;
-          if (!first) first = { p: pid, r: rid };
-        }
-      }
-    } catch (err) {
-      renderSidebar();
-      setStatus("Opening the folder stopped (" + (err && err.message || err) + "). Rooms added so far are kept.", true);
-      return;
-    }
-    if (first) await openRoom(first.p, first.r);
-    renderSidebar();
-    var msg = added
-      ? "Opened " + top + ": added " + added + (added === 1 ? " room" : " rooms") + " in " + order.length + (order.length === 1 ? " project" : " projects") + (already ? ", and " + already + " were already here" : "") + "."
-      : "Nothing new in " + top + ": all " + already + (already === 1 ? " room is" : " rooms are") + " already here.";
-    if (skipped) msg += " " + skipped + (skipped === 1 ? " file was skipped because it isn't a room." : " files were skipped because they aren't rooms.");
-    if (ws.mode === "browser" && added) msg += " The original folder isn't changed.";
-    setStatus(msg);
-  }
+  $("btnOpenFolder").addEventListener("click", requestOpenFolder);
+  $("folderInput").addEventListener("change", function () { openFolderCopy(Array.prototype.slice.call(this.files || [])); });
 
   async function initWorkspace() {
     ws.folderCapable = canUseFolders();
@@ -2206,8 +2251,9 @@
         ws.mode = "folder"; ws.root = h;
         try { ws.perm = await h.queryPermission({ mode: "readwrite" }); } catch (e) { ws.perm = "prompt"; }
         cur = meta && meta.mode === "folder" && meta.r ? { p: meta.p || LOOSE, r: meta.r } : null;
+        empty = !cur;
         if (ws.perm === "granted") { await fsRefresh(); await afterConnect(); }
-        renderSidebar();
+        renderPanel(); renderPlan(); renderSidebar();
         return;
       }
     }
@@ -2223,8 +2269,9 @@
       if (f.rm) cur = { p: meta.p, r: meta.r };
       else {
         cur = null;
-        d.projects.some(function (x) { if (x.rooms.length) { cur = { p: x.id, r: x.rooms[0].id }; return true; } });
+        if (!(meta && meta.empty)) d.projects.some(function (x) { if (x.rooms.length) { cur = { p: x.id, r: x.rooms[0].id }; return true; } });
       }
+      empty = !cur;
       if (cur) { var room = normalize(clone(bsFind(d, cur.p, cur.r).rm.room)); if (room) { S = room; save(); } }
     }
     ws.tree = bsTree(d);
@@ -2608,7 +2655,7 @@
   var WIZ_KEY = KEY + ".wizard";
   function saveWizDraft() {
     if (!wiz) return;
-    try { localStorage.setItem(WIZ_KEY, JSON.stringify({ step: wiz.step, ctx: wiz.ctx, backup: wiz.backup, backupSel: wiz.backupSel, backupCur: wiz.backupCur, target: wiz.target, history: wiz.history, S: S, sel: sel })); } catch (e) {}
+    try { localStorage.setItem(WIZ_KEY, JSON.stringify({ step: wiz.step, ctx: wiz.ctx, backup: wiz.backup, backupSel: wiz.backupSel, backupCur: wiz.backupCur, backupEmpty: wiz.backupEmpty, target: wiz.target, history: wiz.history, S: S, sel: sel })); } catch (e) {}
   }
   function dropWizDraft() { try { localStorage.removeItem(WIZ_KEY); } catch (e) {} }
   function resumeWizard() {
@@ -2616,19 +2663,19 @@
     try { d = JSON.parse(localStorage.getItem(WIZ_KEY) || "null"); } catch (e) {}
     if (!d || !STEPS[d.step] || !d.S || !d.S.room || !Array.isArray(d.history)) return;
     S = d.S; sel = d.sel;
-    wiz = { step: d.step, ctx: d.ctx || {}, backup: d.backup, backupSel: d.backupSel, backupCur: d.backupCur || cur, target: d.target != null ? d.target : targetProject(), history: d.history, focus: false };
+    wiz = { step: d.step, ctx: d.ctx || {}, backup: d.backup, backupSel: d.backupSel, backupCur: d.backupCur || cur, backupEmpty: !!d.backupEmpty, target: d.target != null ? d.target : targetProject(), history: d.history, focus: false };
     showWizard(true); renderPanel(); wizRender(); renderSidebar();
   }
   function wizCancel() {
     dropWizDraft();
-    S = wiz.backup; sel = wiz.backupSel; cur = wiz.backupCur || cur; wiz = null; wizHi = null;
+    S = wiz.backup; sel = wiz.backupSel; cur = wiz.backupCur || null; empty = !!wiz.backupEmpty; wiz = null; wizHi = null;
     showWizard(false); renderPanel(); renderCatalog(); renderPlan(); renderSidebar();
   }
   // The finished room becomes a new room in its project; the room that was open is left untouched.
   function wizFinish() {
     dropWizDraft();
     var target = wiz.target;
-    wiz = null; wizHi = null; sel = null; cur = null;
+    wiz = null; wizHi = null; sel = null; cur = null; empty = false;
     writeCur(false); // the cached room is now the new one, which has no file yet
     showWizard(false); showTab("add"); renderPanel(); save(); renderPlan(); renderSidebar();
     addRoomAndOpen(target, clone(S)).then(function () {
@@ -2640,13 +2687,13 @@
     if (ws.mode === "folder" && ws.perm !== "granted") {
       // a new room needs somewhere to go; and the open room's unsaved edits must stay attached to it
       var m = $("launchMsg"); m.textContent = "Reconnect the folder in the Projects list first, so the new room can be saved there."; m.hidden = false;
-      setStatus("Reconnect the folder to start a new room.", true);
+      setStatus("Reconnect the folder first", true);
       return;
     }
     $("launchMsg").hidden = true;
     selOpening = null;
     flushWrite();
-    wiz = { step: "intro", ctx: {}, backup: clone(S), backupSel: sel, backupCur: cur, target: target != null ? target : targetProject(), history: [], focus: true };
+    wiz = { step: "intro", ctx: {}, backup: clone(S), backupSel: sel, backupCur: cur, backupEmpty: empty, target: target != null ? target : targetProject(), history: [], focus: true };
     showWizard(true);
     wizRender();
     renderSidebar();
@@ -2662,7 +2709,7 @@
   renderSidebar();
   if (window.matchMedia && window.matchMedia("(max-width: 1100px)").matches) $("sideDetails").open = false;
   initWorkspace().then(resumeWizard, function (e) {
-    setStatus("Projects couldn't load (" + (e && e.message || e) + "). The room on the plan is still saved in this browser.", true);
+    setStatus("Projects couldn't load", true, (e && e.message || e) + ". The room on the plan is still saved in this browser.");
     resumeWizard();
   });
 })();
